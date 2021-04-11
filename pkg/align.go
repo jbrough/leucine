@@ -3,8 +3,8 @@ package blastr
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"os"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/twmb/murmur3"
@@ -37,23 +37,43 @@ func btoid(a []byte) []byte {
 	return a[4 : i+4]
 }
 
-type Hit struct {
-	QueryId  string
-	QueryPos int
-	HitId    string
-	HitPos   int
-	HitWord  string
+type Stats struct {
+	SequencesSearched    int     `json:"total_sequeneces_searched"`
+	AlignmentsFound      int     `json:"alignments_found`
+	AlignmentsTested     uint64  `json:"alignments_tested"`
+	RuntimeSecs          float64 `json:"runtime_secs"`
+	AlignmentTestsPerSec uint64  `json:"alginment_tests_per_sec"`
 }
 
-func Align(query_path, test_path string, ngram_n int, out chan Hit) (err error) {
+func (s Stats) Add(sa Stats) Stats {
+	return Stats{
+		s.SequencesSearched + sa.SequencesSearched,
+		s.AlignmentsFound + sa.AlignmentsFound,
+		s.AlignmentsTested + sa.AlignmentsTested,
+		s.RuntimeSecs + sa.RuntimeSecs,
+		s.AlignmentTestsPerSec + sa.AlignmentTestsPerSec,
+	}
+}
+
+type Hit struct {
+	QueryId  string `json:"id"`
+	QueryPos int    `json:"i"`
+	HitId    string `json:"bid"`
+	HitPos   int    `json:"bi"`
+	HitWord  string `json:"m"`
+}
+
+func Align(query_path, test_path string, ngram_n int, out chan Hit) (stats Stats, err error) {
 	query_file, err := os.Open(query_path)
 	if err != nil {
-		return err
+		return
 	}
 
 	query_test := make(map[uint64]bool)
 	query_table := make(map[uint64]map[uint64]int)
 	query_ids := make(map[uint64]string)
+
+	stats = Stats{}
 
 	d := true
 	var id []byte
@@ -84,17 +104,19 @@ func Align(query_path, test_path string, ngram_n int, out chan Hit) (err error) 
 
 	test_file, err := os.Open(test_path)
 	if err != nil {
-		return err
+		return
 	}
+	defer test_file.Close()
 
 	scanner = bufio.NewScanner(test_file)
 
-	var total int
+	ts := time.Now()
+
 	for scanner.Scan() {
-		total++
 		l := scanner.Bytes()
 		var skip int
 		if d {
+			stats.SequencesSearched++
 			id = btoid(l)
 			d = !d
 		} else {
@@ -104,10 +126,10 @@ func Align(query_path, test_path string, ngram_n int, out chan Hit) (err error) 
 				} else {
 					skip = 0
 				}
+				stats.AlignmentsTested++
 				if _, ok := query_test[hash(word)]; ok {
 					for qid, tbl := range query_table {
 						if idx, ok := tbl[hash(word)]; ok {
-							fmt.Println(total)
 							out <- Hit{
 								QueryId:  query_ids[qid],
 								QueryPos: idx,
@@ -116,6 +138,7 @@ func Align(query_path, test_path string, ngram_n int, out chan Hit) (err error) 
 								HitWord:  string(word),
 							}
 							skip = i + ngram_n
+							stats.AlignmentsFound++
 						}
 					}
 				}
@@ -127,5 +150,8 @@ func Align(query_path, test_path string, ngram_n int, out chan Hit) (err error) 
 		}
 	}
 
+	es := time.Now().Sub(ts).Seconds()
+	stats.RuntimeSecs = es
+	stats.AlignmentTestsPerSec = stats.AlignmentsTested / uint64(es)
 	return
 }
