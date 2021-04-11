@@ -4,20 +4,55 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
+	"sync"
+	"time"
 
 	"github.com/jbrough/blastr"
 )
 
 func main() {
-	entries := flag.Float64("entries", 1e7, "number of entries per fasta file eg 1e7")
-	in := flag.String("in", "", "fasta source file")
+	n := flag.Float64("n", 1e7, "number of entries per fasta file eg 1e7")
+	in := flag.String("in", "", "fasta source file or directory")
 	out := flag.String("out", "", "out folder")
 	flag.Parse()
 
-	limit := int(*entries)
+	ts := time.Now()
 
-	if err := blastr.SplitFasta(*in, *out, limit); err != nil {
+	limit := int(*n)
+
+	info := blastr.SplitInfo{*in, *out, blastr.SplitStats{}, 0}
+
+	paths, err := blastr.FastaPathsFromOpt(*in)
+	if err != nil {
 		panic(err)
 	}
+
+	wg := sync.WaitGroup{}
+
+	for _, path := range paths {
+		wg.Add(1)
+		go func(path string, wg *sync.WaitGroup) {
+			defer wg.Done()
+			stats, err := blastr.SplitFasta(path, *out, limit)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(stats.AsJSON())
+
+			info.Stats = info.Stats.Add(stats)
+		}(path, &wg)
+	}
+
+	wg.Wait()
+
+	info.RuntimeSecs = time.Now().Sub(ts).Seconds()
+	j, err := json.Marshal(&info)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(string(j))
 }

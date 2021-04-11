@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/jbrough/blastr"
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -26,6 +25,8 @@ func main() {
 	flag.Parse()
 
 	outCh := make(chan blastr.Hit)
+
+	info := blastr.AlignInfo{*query, *candidates, blastr.Stats{}, 0}
 
 	var fastas []string
 
@@ -57,26 +58,26 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(len(fastas))
 
-	stats := blastr.Stats{}
-
 	for _, path := range fastas {
 		go func(path string) {
 			defer wg.Done()
-			s, err := blastr.Align(*query, path, *n, outCh)
+			stats, err := blastr.Align(*query, path, *n, outCh)
 			if err != nil {
 				panic(err)
 			}
-			stats = stats.Add(s)
-			log.Print("finished " + path)
+			stats.FastaFile = path
+			fmt.Println(stats.asJSON())
+
+			info.stats.Add(stats)
 		}(path)
 	}
 
 	wg.Wait()
 
-	j, err := json.Marshal(stats)
+	j, err := json.Marshal(&info)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(string(j))
 
+	fmt.Prinln(string(j))
 }

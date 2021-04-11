@@ -3,12 +3,55 @@ package blastr
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"os"
 	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/twmb/murmur3"
 )
+
+type AlignInfo struct {
+	Query       string     `json:"query"`
+	Candidates  string     `json:"candidates";`
+	Stats       AlignStats `json:"stats"`
+	RuntimeSecs float64    `json:"runtime_secs"`
+}
+
+type AlignStats struct {
+	SequencesSearched    int          `json:"sequeneces_searched"`
+	AlignmentsFound      int          `json:"alignments_found"`
+	AlignmentsTested     uint64       `json:"alignments_tested"`
+	AlignmentTestsPerSec uint64       `json:"alginment_tests_per_sec"`
+	RuntimeSecs          float64      `json:"runtime_secs"`
+	FastaFile            string       `json:"fasta_file,omitempty"`
+	Stats                []AlignStats `json:"stats,omitempty"`
+}
+
+func (s AlignStats) Add(sa AlignStats) AlignStats {
+	return AlignStats{
+		SequencesSearched:    s.SequencesSearched + sa.SequencesSearched,
+		AlignmentsFound:      s.AlignmentsFound + sa.AlignmentsFound,
+		AlignmentsTested:     s.AlignmentsTested + sa.AlignmentsTested,
+		AlignmentTestsPerSec: s.AlignmentTestsPerSec + sa.AlignmentTestsPerSec,
+	}
+}
+
+func (s AlignStats) AsJSON() string {
+	j, err := json.Marshal(s)
+	if err != nil {
+		panic(err)
+	}
+	return string(j)
+}
+
+type Alignment struct {
+	QueryId      string `json:"qid"`
+	QueryIdx     int    `json:"qi"`
+	CandidateId  string `json:"cid"`
+	CandidateIdx int    `json:"ci"`
+	Word         string `json:"w"`
+}
 
 func hash(data []byte) uint64 {
 	hasher := murmur3.New128()
@@ -37,33 +80,7 @@ func btoid(a []byte) []byte {
 	return a[4 : i+4]
 }
 
-type Stats struct {
-	SequencesSearched    int     `json:"total_sequeneces_searched"`
-	AlignmentsFound      int     `json:"alignments_found`
-	AlignmentsTested     uint64  `json:"alignments_tested"`
-	RuntimeSecs          float64 `json:"runtime_secs"`
-	AlignmentTestsPerSec uint64  `json:"alginment_tests_per_sec"`
-}
-
-func (s Stats) Add(sa Stats) Stats {
-	return Stats{
-		s.SequencesSearched + sa.SequencesSearched,
-		s.AlignmentsFound + sa.AlignmentsFound,
-		s.AlignmentsTested + sa.AlignmentsTested,
-		s.RuntimeSecs + sa.RuntimeSecs,
-		s.AlignmentTestsPerSec + sa.AlignmentTestsPerSec,
-	}
-}
-
-type Hit struct {
-	QueryId  string `json:"id"`
-	QueryPos int    `json:"i"`
-	HitId    string `json:"bid"`
-	HitPos   int    `json:"bi"`
-	HitWord  string `json:"m"`
-}
-
-func Align(query_path, test_path string, ngram_n int, out chan Hit) (stats Stats, err error) {
+func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats AlignStats, err error) {
 	query_file, err := os.Open(query_path)
 	if err != nil {
 		return
@@ -73,7 +90,7 @@ func Align(query_path, test_path string, ngram_n int, out chan Hit) (stats Stats
 	query_table := make(map[uint64]map[uint64]int)
 	query_ids := make(map[uint64]string)
 
-	stats = Stats{}
+	stats = AlignStats{}
 
 	d := true
 	var id []byte
@@ -130,12 +147,12 @@ func Align(query_path, test_path string, ngram_n int, out chan Hit) (stats Stats
 				if _, ok := query_test[hash(word)]; ok {
 					for qid, tbl := range query_table {
 						if idx, ok := tbl[hash(word)]; ok {
-							out <- Hit{
-								QueryId:  query_ids[qid],
-								QueryPos: idx,
-								HitId:    string(id),
-								HitPos:   i,
-								HitWord:  string(word),
+							out <- Alignment{
+								QueryId:      query_ids[qid],
+								QueryIdx:     idx,
+								CandidateId:  string(id),
+								CandidateIdx: i,
+								Word:         string(word),
 							}
 							skip = i + ngram_n
 							stats.AlignmentsFound++

@@ -9,7 +9,9 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,7 +28,9 @@ func main() {
 	out := flag.String("out", "", "fasta out file")
 	flag.Parse()
 
-	t := time.Now()
+	ts := time.Now()
+
+	info := blastr.SelectInfo{*search, *in, *out, bastr.Stats{}, 0}
 
 	outCh := make(chan [2]string)
 
@@ -68,15 +72,29 @@ func main() {
 	for _, path := range fastas {
 		go func(path string) {
 			defer wg.Done()
-			if err := blastr.Select(path, *search, outCh); err != nil {
+			stats, err := blastr.Select(path, *search, outCh)
+			if err != nil {
 				panic(err)
 			}
-			log.Print("finished " + path)
+			info.Stats = stats
+			j, err := json.Marshal(info)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(string(j))
+
 		}(path)
 	}
 
 	wg.Wait()
 
-	e := time.Now().Sub(t).Seconds()
-	log.Debug().Float64("elapased_secs", e).Send()
+	info.RunetimeSecs = time.Now().Sub(ts).Seconds()
+
+	info.Stats = stats
+	j, err := json.Marshal(info)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(j))
+
 }
