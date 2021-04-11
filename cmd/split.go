@@ -21,9 +21,7 @@ func main() {
 
 	ts := time.Now()
 
-	limit := int(*n)
-
-	info := blastr.SplitInfo{*in, *out, blastr.SplitStats{}, 0}
+	info := blastr.SplitInfo{*in, *out, []blastr.SplitStats{}, 0}
 
 	paths, err := blastr.FastaPathsFromOpt(*in)
 	if err != nil {
@@ -36,13 +34,13 @@ func main() {
 		wg.Add(1)
 		go func(path string, wg *sync.WaitGroup) {
 			defer wg.Done()
-			stats, err := blastr.SplitFasta(path, *out, limit)
+			stats, err := blastr.SplitFasta(path, *out, int(*n))
 			if err != nil {
 				panic(err)
 			}
 			fmt.Println(stats.AsJSON())
 
-			info.Stats = info.Stats.Add(stats)
+			info.Stats = append(info.Stats, stats)
 		}(path, &wg)
 	}
 
