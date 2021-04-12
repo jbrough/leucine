@@ -49,6 +49,7 @@ type Alignment struct {
 	CandidateId  string `json:"cid"`
 	CandidateIdx int    `json:"ci"`
 	Word         string `json:"w"`
+	LocalSeq     string `json:"s"`
 }
 
 func hash(data []byte) uint64 {
@@ -147,14 +148,27 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 					if _, ok := query_test[hash(word)]; ok {
 						for qid, tbl := range query_table {
 							if idx, ok := tbl[hash(word)]; ok {
+								skip = i + ngram_n
+
+								// get the sequence surruonding the match
+								n := (30 - ngram_n) / 2
+								s := len(l)
+								x := i - n
+								if x < 0 {
+									x = 0
+								}
+								y := i + n
+								if y > s {
+									y = skip
+								}
 								out <- Alignment{
 									QueryId:      query_ids[qid],
 									QueryIdx:     idx,
 									CandidateId:  string(id),
 									CandidateIdx: i,
 									Word:         string(word),
+									LocalSeq:     string(l[x:y]),
 								}
-								skip = i + ngram_n
 								stats.AlignmentsFound++
 							}
 						}

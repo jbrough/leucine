@@ -1,4 +1,4 @@
-.PHONY: example_split
+.PHONY: example
 
 example:
 	rm -rf examples/generated/*
