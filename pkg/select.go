@@ -8,23 +8,24 @@ import (
 )
 
 type SelectInfo struct {
-	Query       string      `json:"query"`
-	Destination string      `json:"destination"`
-	Stats       SelectStats `json:"stats"`
-	RuntimeSecs float64     `json:"runtime_secs"`
+	Source      string        `json:"source"`
+	Destination string        `json:"destination"`
+	Query       string        `json:"query"`
+	Stats       []SelectStats `json:"stats"`
+	RuntimeSecs float64       `json:"runtime_secs"`
 }
 
 type SelectStats struct {
-	FastasSearched int     `json:"fastas_searched"`
-	FastasSelected int     `json:"fastas_selected"`
-	RuntimeSecs    float64 `json:"runtime_secs"`
+	FastaFile   string  `json:"fasta_file"`
+	Searched    int     `json:"searched"`
+	Selected    int     `json:"selected"`
+	RuntimeSecs float64 `json:"runtime_secs"`
 }
 
 func (s SelectStats) Add(sa SelectStats) SelectStats {
 	return SelectStats{
-		s.FastasSearched + sa.FastasSearched,
-		s.FastasSelected + sa.FastasSelected,
-		0,
+		Searched: s.Searched + sa.Searched,
+		Selected: s.Selected + sa.Selected,
 	}
 }
 
@@ -43,18 +44,21 @@ func Select(path, query string, out chan [2]string) (stats SelectStats, err erro
 	scanner := bufio.NewScanner(file)
 
 	stats = SelectStats{}
+	stats.FastaFile = path
+
+	query = strings.ToLower(query)
 
 	for scanner.Scan() {
 		t := scanner.Text()
 		if d {
-			stats.FastasSearched++
-			if strings.Contains(t, query) {
+			stats.Searched++
+			if strings.Contains(strings.ToLower(t), query) {
 				desc = t
 				match = true
 			}
 		} else if match {
 			out <- [2]string{desc, t}
-			stats.FastasSelected++
+			stats.Selected++
 			match = false
 		}
 		d = !d

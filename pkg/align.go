@@ -12,10 +12,9 @@ import (
 )
 
 type AlignInfo struct {
-	Query       string     `json:"query"`
-	Candidates  string     `json:"candidates";`
-	Stats       AlignStats `json:"stats"`
-	RuntimeSecs float64    `json:"runtime_secs"`
+	Query      string     `json:"query"`
+	Candidates string     `json:"candidates";`
+	Stats      AlignStats `json:"stats"`
 }
 
 type AlignStats struct {
@@ -28,13 +27,12 @@ type AlignStats struct {
 	Stats                []AlignStats `json:"stats,omitempty"`
 }
 
-func (s AlignStats) Add(sa AlignStats) AlignStats {
-	return AlignStats{
-		SequencesSearched:    s.SequencesSearched + sa.SequencesSearched,
-		AlignmentsFound:      s.AlignmentsFound + sa.AlignmentsFound,
-		AlignmentsTested:     s.AlignmentsTested + sa.AlignmentsTested,
-		AlignmentTestsPerSec: s.AlignmentTestsPerSec + sa.AlignmentTestsPerSec,
-	}
+func (s *AlignStats) Add(sa AlignStats) {
+	s.SequencesSearched += sa.SequencesSearched
+	s.AlignmentsFound += sa.AlignmentsFound
+	s.AlignmentsTested += sa.AlignmentsTested
+	s.AlignmentTestsPerSec += sa.AlignmentTestsPerSec
+	s.RuntimeSecs += sa.RuntimeSecs
 }
 
 func (s AlignStats) AsJSON() string {
@@ -137,30 +135,33 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 			id = btoid(l)
 			d = !d
 		} else {
-			for i, word := range words(l, ngram_n) {
-				if skip > 0 && i < skip {
-					continue
-				} else {
-					skip = 0
-				}
-				stats.AlignmentsTested++
-				if _, ok := query_test[hash(word)]; ok {
-					for qid, tbl := range query_table {
-						if idx, ok := tbl[hash(word)]; ok {
-							out <- Alignment{
-								QueryId:      query_ids[qid],
-								QueryIdx:     idx,
-								CandidateId:  string(id),
-								CandidateIdx: i,
-								Word:         string(word),
+			// dont check self
+			if _, ok := query_table[hash(id)]; !ok {
+				for i, word := range words(l, ngram_n) {
+					if skip > 0 && i < skip {
+						continue
+					} else {
+						skip = 0
+					}
+					stats.AlignmentsTested++
+					if _, ok := query_test[hash(word)]; ok {
+						for qid, tbl := range query_table {
+							if idx, ok := tbl[hash(word)]; ok {
+								out <- Alignment{
+									QueryId:      query_ids[qid],
+									QueryIdx:     idx,
+									CandidateId:  string(id),
+									CandidateIdx: i,
+									Word:         string(word),
+								}
+								skip = i + ngram_n
+								stats.AlignmentsFound++
 							}
-							skip = i + ngram_n
-							stats.AlignmentsFound++
 						}
 					}
 				}
+				d = !d
 			}
-			d = !d
 		}
 		if err = scanner.Err(); err != nil {
 			return
@@ -169,6 +170,6 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 
 	es := time.Now().Sub(ts).Seconds()
 	stats.RuntimeSecs = es
-	stats.AlignmentTestsPerSec = stats.AlignmentsTested / uint64(es)
+	stats.AlignmentTestsPerSec = uint64(float64(stats.AlignmentsTested) / es)
 	return
 }

@@ -4,9 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/jbrough/blastr"
@@ -24,28 +21,18 @@ func main() {
 	_ = out
 	flag.Parse()
 
-	outCh := make(chan blastr.Hit)
+	outCh := make(chan blastr.Alignment)
 
-	info := blastr.AlignInfo{*query, *candidates, blastr.Stats{}, 0}
+	info := blastr.AlignInfo{*query, *candidates, blastr.AlignStats{}}
 
-	var fastas []string
-
-	if strings.HasSuffix(*candidates, ".fa") {
-		fastas = append(fastas, *candidates)
-	} else {
-		if err := filepath.Walk(*candidates, func(path string, info os.FileInfo, err error) error {
-			if strings.HasSuffix(path, ".fa") {
-				fastas = append(fastas, path)
-			}
-			return nil
-		}); err != nil {
-			panic(err)
-		}
+	paths, err := blastr.FastaPathsFromOpt(*candidates)
+	if err != nil {
+		panic(err)
 	}
 
 	go func() {
-		for hit := range outCh {
-			j, err := json.Marshal(hit)
+		for a := range outCh {
+			j, err := json.Marshal(a)
 			if err != nil {
 				panic(err)
 			}
@@ -56,9 +43,9 @@ func main() {
 	}()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(fastas))
 
-	for _, path := range fastas {
+	for _, path := range paths {
+		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
 			stats, err := blastr.Align(*query, path, *n, outCh)
@@ -66,9 +53,10 @@ func main() {
 				panic(err)
 			}
 			stats.FastaFile = path
-			fmt.Println(stats.asJSON())
+			fmt.Println(stats.AsJSON())
 
-			info.stats.Add(stats)
+			info.Stats.Add(stats)
+			info.Stats.Stats = append(info.Stats.Stats, stats)
 		}(path)
 	}
 
@@ -79,5 +67,5 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Prinln(string(j))
+	fmt.Println(string(j))
 }

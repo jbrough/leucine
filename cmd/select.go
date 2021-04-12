@@ -13,13 +13,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/jbrough/blastr"
-	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -30,24 +28,14 @@ func main() {
 
 	ts := time.Now()
 
-	info := blastr.SelectInfo{*search, *in, *out, bastr.Stats{}, 0}
+	info := blastr.SelectInfo{*in, *out, *search, []blastr.SelectStats{}, 0}
+
+	paths, err := blastr.FastaPathsFromOpt(*in)
+	if err != nil {
+		panic(err)
+	}
 
 	outCh := make(chan [2]string)
-
-	var fastas []string
-
-	if strings.HasSuffix(*in, ".fa") {
-		fastas = append(fastas, *in)
-	} else {
-		if err := filepath.Walk(*in, func(path string, info os.FileInfo, err error) error {
-			if strings.HasSuffix(path, ".fa") {
-				fastas = append(fastas, path)
-			}
-			return nil
-		}); err != nil {
-			panic(err)
-		}
-	}
 
 	file, err := os.Create(*out)
 	if err != nil {
@@ -58,7 +46,6 @@ func main() {
 
 	go func() {
 		for f := range outCh {
-			log.Print("found " + f[0])
 			line := f[0] + "\n" + f[1] + "\n"
 			if _, err = file.WriteString(line); err != nil {
 				return
@@ -67,16 +54,19 @@ func main() {
 	}()
 
 	wg := sync.WaitGroup{}
-	wg.Add(len(fastas))
 
-	for _, path := range fastas {
+	for _, path := range paths {
+		if strings.Contains(path, *out) {
+			continue
+		}
+		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
 			stats, err := blastr.Select(path, *search, outCh)
 			if err != nil {
 				panic(err)
 			}
-			info.Stats = stats
+			info.Stats = append(info.Stats, stats)
 			j, err := json.Marshal(info)
 			if err != nil {
 				panic(err)
@@ -88,9 +78,8 @@ func main() {
 
 	wg.Wait()
 
-	info.RunetimeSecs = time.Now().Sub(ts).Seconds()
+	info.RuntimeSecs = time.Now().Sub(ts).Seconds()
 
-	info.Stats = stats
 	j, err := json.Marshal(info)
 	if err != nil {
 		panic(err)
