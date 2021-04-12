@@ -208,5 +208,14 @@ go run cmd/align.go -query=examples/generated/frog.fa -candidates=examples/gener
   },
   "w": "DKRVD"
 }
-go run cmd/align.go -query=examples/generated/frog.fa -candidates=examples/generated -n 5 -j | go run cmd/local.go | go run cmd/pretty.go
+go run cmd/align.go -query=examples/generated/frog.fa -candidates=examples/generated -n 5 -j | go run cmd/local.go | go run cmd/pretty.go 
+{
+  "align": [
+    "Query  144  QHVAAFLKELRHSKQYENVNLIHYILTDKRVDIQHLEKDLVKDFKALVESAHRMRQGHMI  204",
+    "                                       DKRVD                                 ",
+    "Sbjct  398  WVGRWVYVPKFAGACIHEYTGNLGGWVDKRVDSSGWVYLEAPPHDPANGYYGYSVWSYCG  458"
+  ],
+  "query": "sp|Q6GZX4|001R_FRG3G Putative transcription factor 001R OS=Frog virus 3 (isolate Goorha) OX=654924 GN=FV3-001R PE=4 SV=1",
+  "sbjct": "tr|O08452|O08452_9EURY Alpha-amylase OS=Pyrococcus furiosus OX=2261 GN=amyA PE=3 SV=1"
+}
 ```
