@@ -1,20 +1,22 @@
 Examples
 --------
 
-These example files are the head -50 output of uniprot_trembl.fasta and uniprot_sprot.fasta
+These example files are the `head -50` output of `uniprot_trembl.fasta` and
+`uniprot_sprot.fasta`
 
-These are single "interleaved" format multi-fasta files. BLASTr uses these files as a flat-
-file database after some minimal processing. See the commands in the `makefile` for an
-example.
+These are single "interleaved" format multi-fasta files. blastr uses these
+files as a flat-file database after some minimal processing. See the commands
+in the `makefile` for an example.
 
-The full files can be downloaded from uniprot.org or (the far faster) epi.ac.uk FTP server:
+The full files can be downloaded from uniprot.org or (the far faster)
+epi.ac.uk FTP server:
 
 https://ftp.ebi.ac.uk/pub/databases/swissprot/release_compressed/
 
-The full trEMBL file contains 200 million fastas but will process in a few minutes. The 
-default config splits it into 20 files of 20 million sequential fastas (40 million lines).
-This is to give some organisation around parallelism rather than because of filesystem or
-limits.
+The full trEMBL file contains 200 million fastas but will process in a few
+minutes. The default config splits it into 20 files of 20 million sequential
+fastas (40 million lines). This is to give some organisation around parallelism
+rather than because of filesystem or limits.
 
 `$ make example`
 
