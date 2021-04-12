@@ -88,10 +88,12 @@ func localAligments(ba, bb []byte, ia, ib, sa, sb int) (LocalAlignment, LocalAli
 	var as, bs string
 	if ay >= len(ba)-1 {
 		as += "*"
+		bs += " "
 	}
 
 	if by >= len(bb)-1 {
 		bs += "*"
+		as += " "
 	}
 
 	if len(aseq) < len(bseq) {
