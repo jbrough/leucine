@@ -4,7 +4,7 @@ Examples
 These example files are the `head -50` output of `uniprot_trembl.fasta` and
 `uniprot_sprot.fasta`
 
-These are single "interleaved" format multi-fasta files. blastr uses these
+These are single "interleaved" format multi-fasta files. leucine uses these
 files as a flat-file database after some minimal processing. See the commands
 in the `makefile` for an example.
 

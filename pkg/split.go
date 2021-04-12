@@ -1,4 +1,4 @@
-package blastr
+package leucine
 
 import (
 	"bufio"

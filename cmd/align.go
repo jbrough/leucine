@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/jbrough/blastr"
+	"github.com/jbrough/leucine"
 )
 
 func main() {
@@ -21,11 +21,11 @@ func main() {
 	_ = out
 	flag.Parse()
 
-	outCh := make(chan blastr.Alignment)
+	outCh := make(chan leucine.Alignment)
 
-	info := blastr.AlignInfo{*query, *candidates, blastr.AlignStats{}}
+	info := leucine.AlignInfo{*query, *candidates, leucine.AlignStats{}}
 
-	paths, err := blastr.FastaPathsFromOpt(*candidates)
+	paths, err := leucine.FastaPathsFromOpt(*candidates)
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +48,7 @@ func main() {
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
-			stats, err := blastr.Align(*query, path, *n, outCh)
+			stats, err := leucine.Align(*query, path, *n, outCh)
 			if err != nil {
 				panic(err)
 			}

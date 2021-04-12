@@ -12,7 +12,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jbrough/blastr"
+	"github.com/jbrough/leucine"
 )
 
 type PrettyAlignment struct {
@@ -35,7 +35,7 @@ func main() {
 
 	dec := json.NewDecoder(os.Stdin)
 
-	var a blastr.Alignment
+	var a leucine.Alignment
 
 	for {
 		if err := dec.Decode(&a); err != nil {

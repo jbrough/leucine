@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jbrough/blastr"
+	"github.com/jbrough/leucine"
 )
 
 func main() {
@@ -21,9 +21,9 @@ func main() {
 
 	ts := time.Now()
 
-	info := blastr.SplitInfo{*in, *out, []blastr.SplitStats{}, 0}
+	info := leucine.SplitInfo{*in, *out, []leucine.SplitStats{}, 0}
 
-	paths, err := blastr.FastaPathsFromOpt(*in)
+	paths, err := leucine.FastaPathsFromOpt(*in)
 	if err != nil {
 		panic(err)
 	}
@@ -34,7 +34,7 @@ func main() {
 		wg.Add(1)
 		go func(path string, wg *sync.WaitGroup) {
 			defer wg.Done()
-			stats, err := blastr.SplitFasta(path, *out, int(*n))
+			stats, err := leucine.SplitFasta(path, *out, int(*n))
 			if err != nil {
 				panic(err)
 			}

@@ -17,7 +17,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jbrough/blastr"
+	"github.com/jbrough/leucine"
 )
 
 func main() {
@@ -28,9 +28,9 @@ func main() {
 
 	ts := time.Now()
 
-	info := blastr.SelectInfo{*in, *out, *search, []blastr.SelectStats{}, 0}
+	info := leucine.SelectInfo{*in, *out, *search, []leucine.SelectStats{}, 0}
 
-	paths, err := blastr.FastaPathsFromOpt(*in)
+	paths, err := leucine.FastaPathsFromOpt(*in)
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +62,7 @@ func main() {
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
-			stats, err := blastr.Select(path, *search, outCh)
+			stats, err := leucine.Select(path, *search, outCh)
 			if err != nil {
 				panic(err)
 			}
