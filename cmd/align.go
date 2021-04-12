@@ -53,7 +53,7 @@ func main() {
 				panic(err)
 			}
 			stats.FastaFile = path
-			fmt.Println(stats.AsJSON())
+			//		fmt.Println(stats.AsJSON())
 
 			info.Stats.Add(stats)
 			info.Stats.Stats = append(info.Stats.Stats, stats)
@@ -66,6 +66,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println(string(j))
+	_ = j
+	//	fmt.Println(string(j))
 }

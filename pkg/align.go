@@ -44,12 +44,74 @@ func (s AlignStats) AsJSON() string {
 }
 
 type Alignment struct {
-	QueryId      string `json:"qid"`
-	QueryIdx     int    `json:"qi"`
-	CandidateId  string `json:"cid"`
-	CandidateIdx int    `json:"ci"`
-	Word         string `json:"w"`
-	LocalSeq     string `json:"s"`
+	QueryId     string         `json:"qid"`
+	QueryIdx    int            `json:"qi"`
+	SubjectId   string         `json:"sid"`
+	SubjectIdx  int            `json:"si"`
+	Word        string         `json:"w"`
+	QuerySeq    LocalAlignment `json:"qs,omitempty"`
+	SubjectSeq  LocalAlignment `json:"ss,omitempty"`
+	QueryName   string         `json:"qn,omitempty"`
+	SubjectName string         `json:"sn,omitempty"`
+}
+
+type LocalAlignment struct {
+	X int    `json:"x"`
+	Y int    `json:"y"`
+	A string `json:"a"`
+}
+
+func localAligments(ba, bb []byte, ia, ib, sa, sb int) (LocalAlignment, LocalAlignment) {
+	seq := func(b []byte, i, s int) ([]byte, int, int) {
+		if s%2 != 0 {
+			s++
+		}
+		n := (60 - s) / 2
+
+		x := i - n
+		if x < 0 {
+			x = 0
+		}
+
+		y := i + s + n
+
+		if y >= len(b) {
+			y = len(b)
+		}
+
+		return b[x:y], x, y
+	}
+
+	aseq, ax, ay := seq(ba, ia, sa)
+	bseq, bx, by := seq(bb, ib, sb)
+
+	var as, bs string
+	if ay >= len(ba)-1 {
+		as += "*"
+	}
+
+	if by >= len(bb)-1 {
+		bs += "*"
+	}
+
+	if len(aseq) < len(bseq) {
+		bseq = bseq[:len(aseq)]
+	} else if len(bseq) < len(aseq) {
+		aseq = aseq[:len(bseq)]
+	}
+
+	a := string(aseq) + as
+	b := string(bseq) + bs
+
+	return LocalAlignment{
+			X: ax,
+			Y: ay,
+			A: a,
+		}, LocalAlignment{
+			X: bx,
+			Y: by,
+			A: b,
+		}
 }
 
 func hash(data []byte) uint64 {
@@ -88,17 +150,18 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 	query_test := make(map[uint64]bool)
 	query_table := make(map[uint64]map[uint64]int)
 	query_ids := make(map[uint64]string)
-
+	query_detail := make(map[uint64][2][]byte)
 	stats = AlignStats{}
 
 	d := true
 	var id []byte
-
+	var b []byte
 	scanner := bufio.NewScanner(query_file)
 	for scanner.Scan() {
 		l := scanner.Bytes()
 		if d {
 			id = btoid(l)
+			b = l
 			d = !d
 		} else {
 			query_index := make(map[uint64]int)
@@ -109,6 +172,7 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 			}
 			query_table[hash(id)] = query_index
 			query_ids[hash(id)] = string(id)
+			query_detail[hash(id)] = [2][]byte{b, l}
 			d = !d
 		}
 	}
@@ -134,6 +198,7 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 		if d {
 			stats.SequencesSearched++
 			id = btoid(l)
+			b = l
 			d = !d
 		} else {
 			// dont check self
@@ -150,25 +215,20 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 							if idx, ok := tbl[hash(word)]; ok {
 								skip = i + ngram_n
 
-								// get the sequence surruonding the match
-								n := (30 - ngram_n) / 2
-								s := len(l)
-								x := i - n
-								if x < 0 {
-									x = 0
-								}
-								y := i + n
-								if y > s {
-									y = skip
-								}
+								sseq, qseq := localAligments(l, query_detail[qid][1], i, idx, ngram_n, ngram_n)
+
 								out <- Alignment{
-									QueryId:      query_ids[qid],
-									QueryIdx:     idx,
-									CandidateId:  string(id),
-									CandidateIdx: i,
-									Word:         string(word),
-									LocalSeq:     string(l[x:y]),
+									QueryId:     query_ids[qid],
+									QueryIdx:    idx,
+									SubjectId:   string(id),
+									SubjectIdx:  i,
+									Word:        string(word),
+									QuerySeq:    qseq,
+									SubjectSeq:  sseq,
+									QueryName:   string(query_detail[qid][0][1:]),
+									SubjectName: string(b[1:]),
 								}
+
 								stats.AlignmentsFound++
 							}
 						}
