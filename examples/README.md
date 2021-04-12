@@ -23,277 +23,190 @@ stream.
 
 ```
 rm -rf examples/generated/*
-go run cmd/split.go -n=5 -in=examples/ -out=examples/generated/ | jq
+go run cmd/split.go -n=5 -in=examples/ -out=examples/generated/ | go run cmd/pretty.go
 {
+  "runtime_secs": 0.0002063,
   "source": "examples/uniprot_tr.fasta",
   "splits": [
     "examples/generated/uniprot_tr.1.fa",
     "examples/generated/uniprot_tr.2.fa"
-  ],
-  "runtime_secs": 0.00017247
+  ]
 }
 {
+  "runtime_secs": 0.00020423,
   "source": "examples/uniprot_sprot.fasta",
   "splits": [
     "examples/generated/uniprot_sprot.1.fa",
     "examples/generated/uniprot_sprot.2.fa"
-  ],
-  "runtime_secs": 0.000334381
+  ]
 }
 {
-  "source": "examples/",
   "destination": "examples/generated/",
+  "runtime_secs": 0.000408089,
+  "source": "examples/",
   "stats": [
     {
+      "runtime_secs": 0.0002063,
       "source": "examples/uniprot_tr.fasta",
       "splits": [
         "examples/generated/uniprot_tr.1.fa",
         "examples/generated/uniprot_tr.2.fa"
-      ],
-      "runtime_secs": 0.00017247
+      ]
     },
     {
+      "runtime_secs": 0.00020423,
       "source": "examples/uniprot_sprot.fasta",
       "splits": [
         "examples/generated/uniprot_sprot.1.fa",
         "examples/generated/uniprot_sprot.2.fa"
-      ],
-      "runtime_secs": 0.000334381
+      ]
     }
-  ],
-  "runtime_secs": 0.000456201
+  ]
 }
-go run cmd/select.go -search=Frog -in=examples/generated/ -out=examples/generated/frog.fa | jq
+go run cmd/select.go -search=Frog -in=examples/generated/ -out=examples/generated/frog.fa | go run cmd/pretty.go
 {
-  "source": "examples/generated/",
   "destination": "examples/generated/frog.fa",
   "query": "Frog",
+  "runtime_secs": 0,
+  "source": "examples/generated/",
   "stats": [
     {
       "fasta_file": "examples/generated/uniprot_tr.2.fa",
+      "runtime_secs": 0.00003762,
       "searched": 3,
-      "selected": 0,
-      "runtime_secs": 0.00011169
+      "selected": 0
     }
-  ],
-  "runtime_secs": 0
+  ]
 }
 {
-  "source": "examples/generated/",
   "destination": "examples/generated/frog.fa",
   "query": "Frog",
+  "runtime_secs": 0,
+  "source": "examples/generated/",
   "stats": [
     {
       "fasta_file": "examples/generated/uniprot_tr.2.fa",
+      "runtime_secs": 0.00003762,
       "searched": 3,
-      "selected": 0,
-      "runtime_secs": 0.00011169
+      "selected": 0
     },
     {
       "fasta_file": "examples/generated/uniprot_tr.1.fa",
+      "runtime_secs": 0.00009335,
       "searched": 5,
-      "selected": 0,
-      "runtime_secs": 0.00011386
+      "selected": 0
+    }
+  ]
+}
+{
+  "destination": "examples/generated/frog.fa",
+  "query": "Frog",
+  "runtime_secs": 0,
+  "source": "examples/generated/",
+  "stats": [
+    {
+      "fasta_file": "examples/generated/uniprot_tr.2.fa",
+      "runtime_secs": 0.00003762,
+      "searched": 3,
+      "selected": 0
+    },
+    {
+      "fasta_file": "examples/generated/uniprot_tr.1.fa",
+      "runtime_secs": 0.00009335,
+      "searched": 5,
+      "selected": 0
     },
     {
       "fasta_file": "examples/generated/uniprot_sprot.2.fa",
+      "runtime_secs": 0.00017282,
       "searched": 2,
-      "selected": 1,
-      "runtime_secs": 0.00015176
+      "selected": 1
+    }
+  ]
+}
+{
+  "destination": "examples/generated/frog.fa",
+  "query": "Frog",
+  "runtime_secs": 0,
+  "source": "examples/generated/",
+  "stats": [
+    {
+      "fasta_file": "examples/generated/uniprot_tr.2.fa",
+      "runtime_secs": 0.00003762,
+      "searched": 3,
+      "selected": 0
+    },
+    {
+      "fasta_file": "examples/generated/uniprot_tr.1.fa",
+      "runtime_secs": 0.00009335,
+      "searched": 5,
+      "selected": 0
+    },
+    {
+      "fasta_file": "examples/generated/uniprot_sprot.2.fa",
+      "runtime_secs": 0.00017282,
+      "searched": 2,
+      "selected": 1
     },
     {
       "fasta_file": "examples/generated/uniprot_sprot.1.fa",
+      "runtime_secs": 0.000310521,
       "searched": 5,
-      "selected": 3,
-      "runtime_secs": 0.0001562
+      "selected": 3
     }
-  ],
-  "runtime_secs": 0
+  ]
 }
 {
-  "source": "examples/generated/",
   "destination": "examples/generated/frog.fa",
   "query": "Frog",
+  "runtime_secs": 0.000600361,
+  "source": "examples/generated/",
   "stats": [
     {
       "fasta_file": "examples/generated/uniprot_tr.2.fa",
+      "runtime_secs": 0.00003762,
       "searched": 3,
-      "selected": 0,
-      "runtime_secs": 0.00011169
+      "selected": 0
     },
     {
       "fasta_file": "examples/generated/uniprot_tr.1.fa",
+      "runtime_secs": 0.00009335,
       "searched": 5,
-      "selected": 0,
-      "runtime_secs": 0.00011386
-    }
-  ],
-  "runtime_secs": 0
-}
-{
-  "source": "examples/generated/",
-  "destination": "examples/generated/frog.fa",
-  "query": "Frog",
-  "stats": [
-    {
-      "fasta_file": "examples/generated/uniprot_tr.2.fa",
-      "searched": 3,
-      "selected": 0,
-      "runtime_secs": 0.00011169
-    },
-    {
-      "fasta_file": "examples/generated/uniprot_tr.1.fa",
-      "searched": 5,
-      "selected": 0,
-      "runtime_secs": 0.00011386
+      "selected": 0
     },
     {
       "fasta_file": "examples/generated/uniprot_sprot.2.fa",
+      "runtime_secs": 0.00017282,
       "searched": 2,
-      "selected": 1,
-      "runtime_secs": 0.00015176
-    }
-  ],
-  "runtime_secs": 0
-}
-{
-  "source": "examples/generated/",
-  "destination": "examples/generated/frog.fa",
-  "query": "Frog",
-  "stats": [
-    {
-      "fasta_file": "examples/generated/uniprot_tr.2.fa",
-      "searched": 3,
-      "selected": 0,
-      "runtime_secs": 0.00011169
-    },
-    {
-      "fasta_file": "examples/generated/uniprot_tr.1.fa",
-      "searched": 5,
-      "selected": 0,
-      "runtime_secs": 0.00011386
-    },
-    {
-      "fasta_file": "examples/generated/uniprot_sprot.2.fa",
-      "searched": 2,
-      "selected": 1,
-      "runtime_secs": 0.00015176
+      "selected": 1
     },
     {
       "fasta_file": "examples/generated/uniprot_sprot.1.fa",
+      "runtime_secs": 0.000310521,
       "searched": 5,
-      "selected": 3,
-      "runtime_secs": 0.0001562
+      "selected": 3
     }
-  ],
-  "runtime_secs": 0.00063067
+  ]
 }
-go run cmd/align.go -query=examples/generated/frog.fa -candidates=examples/generated -n 5 -j | jq
+go run cmd/align.go -query=examples/generated/frog.fa -candidates=examples/generated -n 5 -j | go run cmd/pretty.go
 {
-  "sequeneces_searched": 3,
-  "alignments_found": 0,
-  "alignments_tested": 459,
-  "alginment_tests_per_sec": 2954808,
-  "runtime_secs": 0.00015534,
-  "fasta_file": "examples/generated/uniprot_tr.2.fa"
-}
-{
-  "sequeneces_searched": 1,
-  "alignments_found": 0,
-  "alignments_tested": 0,
-  "alginment_tests_per_sec": 0,
-  "runtime_secs": 9.219e-06,
-  "fasta_file": "examples/generated/uniprot_sprot.1.fa"
-}
-{
-  "sequeneces_searched": 1,
-  "alignments_found": 0,
-  "alignments_tested": 0,
-  "alginment_tests_per_sec": 0,
-  "runtime_secs": 4.25e-06,
-  "fasta_file": "examples/generated/uniprot_sprot.2.fa"
-}
-{
-  "sequeneces_searched": 1,
-  "alignments_found": 0,
-  "alignments_tested": 0,
-  "alginment_tests_per_sec": 0,
-  "runtime_secs": 4.9e-06,
-  "fasta_file": "examples/generated/frog.fa"
-}
-{
-  "qid": "Q6GZX4",
   "qi": 171,
-  "cid": "O08452",
-  "ci": 425,
+  "qid": "Q6GZX4",
+  "qn": "sp|Q6GZX4|001R_FRG3G Putative transcription factor 001R OS=Frog virus 3 (isolate Goorha) OX=654924 GN=FV3-001R PE=4 SV=1",
+  "qs": {
+    "a": "QHVAAFLKELRHSKQYENVNLIHYILTDKRVDIQHLEKDLVKDFKALVESAHRMRQGHMI",
+    "x": 144,
+    "y": 204
+  },
+  "si": 425,
+  "sid": "O08452",
+  "sn": "tr|O08452|O08452_9EURY Alpha-amylase OS=Pyrococcus furiosus OX=2261 GN=amyA PE=3 SV=1",
+  "ss": {
+    "a": "WVGRWVYVPKFAGACIHEYTGNLGGWVDKRVDSSGWVYLEAPPHDPANGYYGYSVWSYCG",
+    "x": 398,
+    "y": 458
+  },
   "w": "DKRVD"
 }
-{
-  "qid": "Q6GZX2",
-  "qi": 220,
-  "cid": "C0LL04",
-  "ci": 36,
-  "w": "GKVPA"
-}
-{
-  "sequeneces_searched": 5,
-  "alignments_found": 2,
-  "alignments_tested": 1447,
-  "alginment_tests_per_sec": 2846637,
-  "runtime_secs": 0.000508319,
-  "fasta_file": "examples/generated/uniprot_tr.1.fa"
-}
-{
-  "query": "examples/generated/frog.fa",
-  "candidates": "examples/generated",
-  "stats": {
-    "sequeneces_searched": 11,
-    "alignments_found": 2,
-    "alignments_tested": 1906,
-    "alginment_tests_per_sec": 5801445,
-    "runtime_secs": 0.000682028,
-    "stats": [
-      {
-        "sequeneces_searched": 3,
-        "alignments_found": 0,
-        "alignments_tested": 459,
-        "alginment_tests_per_sec": 2954808,
-        "runtime_secs": 0.00015534,
-        "fasta_file": "examples/generated/uniprot_tr.2.fa"
-      },
-      {
-        "sequeneces_searched": 1,
-        "alignments_found": 0,
-        "alignments_tested": 0,
-        "alginment_tests_per_sec": 0,
-        "runtime_secs": 9.219e-06,
-        "fasta_file": "examples/generated/uniprot_sprot.1.fa"
-      },
-      {
-        "sequeneces_searched": 1,
-        "alignments_found": 0,
-        "alignments_tested": 0,
-        "alginment_tests_per_sec": 0,
-        "runtime_secs": 4.25e-06,
-        "fasta_file": "examples/generated/uniprot_sprot.2.fa"
-      },
-      {
-        "sequeneces_searched": 1,
-        "alignments_found": 0,
-        "alignments_tested": 0,
-        "alginment_tests_per_sec": 0,
-        "runtime_secs": 4.9e-06,
-        "fasta_file": "examples/generated/frog.fa"
-      },
-      {
-        "sequeneces_searched": 5,
-        "alignments_found": 2,
-        "alignments_tested": 1447,
-        "alginment_tests_per_sec": 2846637,
-        "runtime_secs": 0.000508319,
-        "fasta_file": "examples/generated/uniprot_tr.1.fa"
-      }
-    ]
-  }
-}
+go run cmd/align.go -query=examples/generated/frog.fa -candidates=examples/generated -n 5 -j | go run cmd/local.go | go run cmd/pretty.go
 ```
