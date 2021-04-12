@@ -16,7 +16,8 @@ https://ftp.ebi.ac.uk/pub/databases/swissprot/release_compressed/
 The full trEMBL file contains 200 million fastas but will process in a few
 minutes. The default config splits it into 20 files of 20 million sequential
 fastas (40 million lines). This is to give some organisation around parallelism
-rather than because of filesystem or limits.
+rather than because of filesystem or memory limits - everything is read as a
+stream.
 
 `$ make example`
 
