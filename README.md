@@ -9,7 +9,7 @@ pipelines to make it easy to search large datasets without needing anything
 other than ubiquitous `fasta` files, the format that all biological sequence
 information is shared in.
 
-Flat files are faster to read than a database, and can be searched witout any
+Flat files are faster to read than a database, and can be searched without any
 pre-indexing.
 
 To get working instantly with single files containing hundreds of millions of
@@ -34,6 +34,6 @@ At the moment, it is only capable of finding exact matches, such as
 _Do any of the subsequences in any of the 30 proteins in an organism appear
 anywhere, at any position, in any human protein?_
 
-but can do this in a few seconds. It's a proof-of-concept with a view to adding
-common BLAST features like heuristics and subsitution matrices into processing
-pipelines.
+but can do this in a few seconds. It's a proof-of-concept with a view to
+incorporating common BLAST features like heuristics and subsitution matrices
+into processing pipelines.
