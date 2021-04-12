@@ -73,7 +73,7 @@ func localAligments(ba, bb []byte, ia, ib, sa, sb int) (LocalAlignment, LocalAli
 			x = 0
 		}
 
-		y := i + s + n
+		y := i + s + x
 
 		if y >= len(b) {
 			y = len(b)
