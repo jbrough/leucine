@@ -61,58 +61,66 @@ type LocalAlignment struct {
 	A string `json:"a"`
 }
 
-func localAligments(ba, bb []byte, ia, ib, sa, sb int) (LocalAlignment, LocalAlignment) {
-	seq := func(b []byte, i, s int) ([]byte, int, int) {
-		if s%2 != 0 {
-			s++
+func localAlignments(qseq, sseq []byte, qidx, sidx, s int) (LocalAlignment, LocalAlignment) {
+	if s%2 != 0 {
+		s++
+	}
+
+	max := (60 - s) / 2
+
+	len_q := len(qseq)
+	len_s := len(sseq)
+
+	len_qa := qidx
+	len_sa := sidx
+	len_qb := len_q - qidx
+	len_sb := len_s - sidx
+
+	var x, y int
+
+	if max < len_qa && max < len_sa {
+		x = max
+	} else {
+		if len_qa < len_sa {
+			x = len_qa
+		} else {
+			x = len_sa
 		}
-		n := (60 - s) / 2
+	}
 
-		x := i - n
-		if x < 0 {
-			x = 0
+	if max < len_qb && max < len_sb {
+		y = max
+	} else {
+		if len_qb < len_sb {
+			y = len_qb
+		} else {
+			y = len_sb
 		}
-
-		y := i + s + x
-
-		if y >= len(b) {
-			y = len(b)
-		}
-
-		return b[x:y], x, y
 	}
 
-	aseq, ax, ay := seq(ba, ia, sa)
-	bseq, bx, by := seq(bb, ib, sb)
+	qx := qidx - x
+	qy := qidx + y
+	sx := sidx - x
+	sy := sidx + y
 
-	var as, bs string
-	if ay >= len(ba)-1 {
-		as += "*"
-		bs += " "
+	var qsuffix, ssuffix string
+	if qy == len_q+1 {
+		qsuffix = "*"
+	}
+	if sy == len_s+1 {
+		ssuffix = "*"
 	}
 
-	if by >= len(bb)-1 {
-		bs += "*"
-		as += " "
-	}
-
-	if len(aseq) < len(bseq) {
-		bseq = bseq[:len(aseq)]
-	} else if len(bseq) < len(aseq) {
-		aseq = aseq[:len(bseq)]
-	}
-
-	a := string(aseq) + as
-	b := string(bseq) + bs
-
+	qs := string(qseq[qx:qy]) + qsuffix
+	ss := string(sseq[sx:sy]) + ssuffix
 	return LocalAlignment{
-			X: ax,
-			Y: ay,
-			A: a,
+			X: qx,
+			Y: qy,
+			A: qs,
 		}, LocalAlignment{
-			X: bx,
-			Y: by,
-			A: b,
+			X: sx,
+			Y: sy,
+			A: ss,
 		}
 }
 
@@ -158,6 +166,7 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 	d := true
 	var id []byte
 	var b []byte
+
 	scanner := bufio.NewScanner(query_file)
 	for scanner.Scan() {
 		l := scanner.Bytes()
@@ -217,7 +226,7 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 							if idx, ok := tbl[hash(word)]; ok {
 								skip = i + ngram_n
 
-								sseq, qseq := localAligments(l, query_detail[qid][1], i, idx, ngram_n, ngram_n)
+								qseq, sseq := localAlignments(query_detail[qid][1], l, idx, i, ngram_n)
 
 								out <- Alignment{
 									QueryId:     query_ids[qid],

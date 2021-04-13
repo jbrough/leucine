@@ -58,9 +58,9 @@ func main() {
 			}
 
 			strs := [3]string{
-				fmt.Sprintf("Query  %3d  %s  %3d", la.X, la.A, la.Y),
-				fmt.Sprintf("            %s     ", lc),
-				fmt.Sprintf("Sbjct  %3d  %s  %3d", lb.X, lb.A, lb.Y),
+				fmt.Sprintf("Query  %4d  %s  %4d", la.X, la.A, la.Y),
+				fmt.Sprintf("             %s      ", lc),
+				fmt.Sprintf("Sbjct  %4d  %s  %4d", lb.X, lb.A, lb.Y),
 			}
 			j, err := json.Marshal(&PrettyAlignment{a.QueryName, a.SubjectName, strs})
 			if err != nil {
