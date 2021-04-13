@@ -18,7 +18,8 @@ import (
 )
 
 func main() {
-	min_score := flag.Int("score", 0, "min score")
+	min_score := flag.Int("min", 0, "min score")
+	max_score := flag.Int("max", 9999, "max score") // for debugging
 	filter := flag.String("filter", "", "filter by AA subsequence")
 
 	flag.Parse()
@@ -61,7 +62,7 @@ func main() {
 				panic(err)
 			}
 
-			if score.Score >= *min_score {
+			if score.Score >= *min_score && score.Score <= *max_score {
 				fmt.Println(string(j))
 			}
 		}
