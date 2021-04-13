@@ -7,6 +7,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -15,13 +16,12 @@ import (
 	"github.com/jbrough/leucine"
 )
 
-type PrettyAlignment struct {
-	Query     string    `json:"query"`
-	Subject   string    `json:"sbjct"`
-	Alignment [3]string `json:"align"`
-}
-
 func main() {
+	min_score := flag.Int("s", 06, "min score")
+	//	v := flag.Bool("v", false, "enable JSON logging")
+
+	flag.Parse()
+
 	info, err := os.Stdin.Stat()
 	if err != nil {
 		log.Fatal(err)
@@ -36,7 +36,6 @@ func main() {
 	dec := json.NewDecoder(os.Stdin)
 
 	var a leucine.Alignment
-
 	for {
 		if err := dec.Decode(&a); err != nil {
 			if err == io.EOF {
@@ -45,29 +44,15 @@ func main() {
 			log.Fatalf("decode error %v", err)
 		}
 		if a.QueryId != "" {
-			la := a.QuerySeq
-			lb := a.SubjectSeq
-			lc := ""
-
-			for i, c := range la.A {
-				if byte(c) == lb.A[i] {
-					lc += string(c)
-				} else {
-					lc += " "
-				}
-			}
-
-			strs := [3]string{
-				fmt.Sprintf("Query  %4d  %s  %4d", la.X, la.A, la.Y),
-				fmt.Sprintf("             %s      ", lc),
-				fmt.Sprintf("Sbjct  %4d  %s  %4d", lb.X, lb.A, lb.Y),
-			}
-			j, err := json.Marshal(&PrettyAlignment{a.QueryName, a.SubjectName, strs})
+			score := leucine.BasicScore(&a)
+			j, err := json.Marshal(score)
 			if err != nil {
 				panic(err)
 			}
 
-			fmt.Println(string(j))
+			if score.Score >= *min_score {
+				fmt.Println(string(j))
+			}
 		}
 
 	}

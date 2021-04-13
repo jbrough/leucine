@@ -46,18 +46,18 @@ func main() {
 
 	for _, path := range paths {
 		wg.Add(1)
-		go func(path string) {
+		go func(path string, wg *sync.WaitGroup) {
 			defer wg.Done()
 			stats, err := leucine.Align(*query, path, *n, outCh)
 			if err != nil {
 				panic(err)
 			}
 			stats.FastaFile = path
-			//		fmt.Println(stats.AsJSON())
+			fmt.Println(stats.AsJSON())
 
 			info.Stats.Add(stats)
 			info.Stats.Stats = append(info.Stats.Stats, stats)
-		}(path)
+		}(path, &wg)
 	}
 
 	wg.Wait()
@@ -67,5 +67,5 @@ func main() {
 		panic(err)
 	}
 	_ = j
-	//	fmt.Println(string(j))
+	fmt.Println(string(j))
 }

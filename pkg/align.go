@@ -44,24 +44,24 @@ func (s AlignStats) AsJSON() string {
 }
 
 type Alignment struct {
-	QueryId     string         `json:"qid"`
-	QueryIdx    int            `json:"qi"`
-	SubjectId   string         `json:"sid"`
-	SubjectIdx  int            `json:"si"`
-	Word        string         `json:"w"`
-	QuerySeq    LocalAlignment `json:"qs,omitempty"`
-	SubjectSeq  LocalAlignment `json:"ss,omitempty"`
-	QueryName   string         `json:"qn,omitempty"`
-	SubjectName string         `json:"sn,omitempty"`
+	QueryId     string        `json:"qid"`
+	QueryIdx    int           `json:"qi"`
+	SubjectId   string        `json:"sid"`
+	SubjectIdx  int           `json:"si"`
+	Word        string        `json:"w"`
+	QuerySeq    LocalSequence `json:"qs,omitempty"`
+	SubjectSeq  LocalSequence `json:"ss,omitempty"`
+	QueryName   string        `json:"qn,omitempty"`
+	SubjectName string        `json:"sn,omitempty"`
 }
 
-type LocalAlignment struct {
+type LocalSequence struct {
 	X int    `json:"x"`
 	Y int    `json:"y"`
 	A string `json:"a"`
 }
 
-func localAlignments(qseq, sseq []byte, qidx, sidx, s int) (LocalAlignment, LocalAlignment) {
+func localSequences(qseq, sseq []byte, qidx, sidx, s int) (LocalSequence, LocalSequence) {
 	if s%2 != 0 {
 		s++
 	}
@@ -71,20 +71,18 @@ func localAlignments(qseq, sseq []byte, qidx, sidx, s int) (LocalAlignment, Loca
 	len_q := len(qseq)
 	len_s := len(sseq)
 
-	len_qa := qidx
-	len_sa := sidx
 	len_qb := len_q - qidx
 	len_sb := len_s - sidx
 
 	var x, y int
 
-	if max < len_qa && max < len_sa {
+	if max < qidx && max < sidx {
 		x = max
 	} else {
-		if len_qa < len_sa {
-			x = len_qa
+		if qidx < sidx {
+			x = qidx
 		} else {
-			x = len_sa
+			x = sidx
 		}
 	}
 
@@ -111,16 +109,17 @@ func localAlignments(qseq, sseq []byte, qidx, sidx, s int) (LocalAlignment, Loca
 		ssuffix = "*"
 	}
 
-	qs := string(qseq[qx:qy]) + qsuffix
-	ss := string(sseq[sx:sy]) + ssuffix
-	return LocalAlignment{
+	qs := string(qseq[qx:qy])
+	ss := string(sseq[sx:sy])
+
+	return LocalSequence{
 			X: qx,
 			Y: qy,
-			A: qs,
-		}, LocalAlignment{
+			A: string(qs) + qsuffix,
+		}, LocalSequence{
 			X: sx,
 			Y: sy,
-			A: ss,
+			A: string(ss) + ssuffix,
 		}
 }
 
@@ -167,10 +166,14 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 	var id []byte
 	var b []byte
 
+	// support sequential and interleaved fasta query files
 	scanner := bufio.NewScanner(query_file)
 	for scanner.Scan() {
 		l := scanner.Bytes()
 		if d {
+			if bytes.IndexByte(l, '>') == -1 {
+				panic("TODO: Interleaved fastas are not currently supported. Please pre-process with `split`")
+			}
 			id = btoid(l)
 			b = l
 			d = !d
@@ -225,9 +228,7 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 						for qid, tbl := range query_table {
 							if idx, ok := tbl[hash(word)]; ok {
 								skip = i + ngram_n
-
-								qseq, sseq := localAlignments(query_detail[qid][1], l, idx, i, ngram_n)
-
+								qseq, sseq := localSequences(query_detail[qid][1], l, idx, i, ngram_n)
 								out <- Alignment{
 									QueryId:     query_ids[qid],
 									QueryIdx:    idx,
@@ -239,7 +240,6 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 									QueryName:   string(query_detail[qid][0][1:]),
 									SubjectName: string(b[1:]),
 								}
-
 								stats.AlignmentsFound++
 							}
 						}
