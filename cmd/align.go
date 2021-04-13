@@ -66,6 +66,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	_ = j
+
 	fmt.Println(string(j))
 }

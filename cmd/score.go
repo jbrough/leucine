@@ -12,15 +12,21 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/jbrough/leucine"
 )
 
 func main() {
-	min_score := flag.Int("s", 06, "min score")
-	//	v := flag.Bool("v", false, "enable JSON logging")
+	min_score := flag.Int("score", 0, "min score")
+	filter := flag.String("filter", "", "filter by AA subsequence")
 
 	flag.Parse()
+
+	var test_filter bool
+	if *filter != "" {
+		test_filter = true
+	}
 
 	info, err := os.Stdin.Stat()
 	if err != nil {
@@ -44,6 +50,11 @@ func main() {
 			log.Fatalf("decode error %v", err)
 		}
 		if a.QueryId != "" {
+			if test_filter {
+				if !strings.Contains(a.Word, *filter) {
+					continue
+				}
+			}
 			score := leucine.BasicScore(&a)
 			j, err := json.Marshal(score)
 			if err != nil {

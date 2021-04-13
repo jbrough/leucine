@@ -166,7 +166,6 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 	var id []byte
 	var b []byte
 
-	// support sequential and interleaved fasta query files
 	scanner := bufio.NewScanner(query_file)
 	for scanner.Scan() {
 		l := scanner.Bytes()
@@ -174,9 +173,16 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 			if bytes.IndexByte(l, '>') == -1 {
 				panic("TODO: Interleaved fastas are not currently supported. Please pre-process with `split`")
 			}
-			id = btoid(l)
-			b = l
 			d = !d
+			id = btoid(l)
+
+			// TODO: go copies slices by value but the value is a reference to a
+			// backing array. There was a race here that meant b sometimes referenced
+			// the next line. This fixes it but I need to revist this implementation.
+			tmp := make([]byte, len(l))
+			copy(tmp, l)
+			b = tmp
+
 		} else {
 			query_index := make(map[uint64]int)
 			for i, word := range words(l, ngram_n) {
@@ -186,7 +192,12 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 			}
 			query_table[hash(id)] = query_index
 			query_ids[hash(id)] = string(id)
-			query_detail[hash(id)] = [2][]byte{b, l}
+
+			tmp := make([]byte, len(l))
+			copy(tmp, l)
+
+			query_detail[hash(id)] = [2][]byte{b, tmp}
+
 			d = !d
 		}
 	}
@@ -212,7 +223,11 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 		if d {
 			stats.SequencesSearched++
 			id = btoid(l)
-			b = l
+
+			tmp := make([]byte, len(l))
+			copy(tmp, l)
+			b = tmp
+
 			d = !d
 		} else {
 			// dont check self
@@ -228,7 +243,11 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 						for qid, tbl := range query_table {
 							if idx, ok := tbl[hash(word)]; ok {
 								skip = i + ngram_n
-								qseq, sseq := localSequences(query_detail[qid][1], l, idx, i, ngram_n)
+
+								tmp := make([]byte, len(l))
+								copy(tmp, l)
+
+								qseq, sseq := localSequences(query_detail[qid][1], tmp, idx, i, ngram_n)
 								out <- Alignment{
 									QueryId:     query_ids[qid],
 									QueryIdx:    idx,
