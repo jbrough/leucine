@@ -51,5 +51,5 @@ Another facet to the scoring would be to take into account Amino Acid
 Exchangeability (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1449787/).
 
 Probabilistic subsitution matrices like Blossom would be unlikely to add any
-meaningfull information to these kinds of queries that compare small regions of
-sequences, but EX has potential.
+information to these kinds of queries that compare small regions of sequences,
+but EX has potential.
