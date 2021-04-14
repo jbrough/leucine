@@ -2,8 +2,8 @@ package leucine
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,19 +31,11 @@ func (s SplitStats) AsJSON() string {
 	return string(j)
 }
 
-func createPartFile(folder, name string, part int) (f *os.File, err error) {
-	file_name := fmt.Sprintf("%s.%d.fa", name, part)
-	file_path := filepath.Join(folder, file_name)
-	return os.Create(file_path)
-}
-
 func SplitFasta(in, out string, limit int) (stats SplitStats, err error) {
 	ts := time.Now()
 
 	stats.Source = in
 	name := strings.TrimSuffix(filepath.Base(in), ".fasta")
-
-	part := 1
 
 	file, err := os.Open(in)
 	if err != nil {
@@ -51,49 +43,49 @@ func SplitFasta(in, out string, limit int) (stats SplitStats, err error) {
 	}
 	defer file.Close()
 
-	f, err := createPartFile(out, name, part)
+	files, err := NewPartFiles(out, name)
 	if err != nil {
 		return
 	}
-	defer f.Close()
-	stats.Splits = append(stats.Splits, f.Name())
 
-	var c bool
+	stats.Splits = append(stats.Splits, files.Name())
+
 	scanner := bufio.NewScanner(file)
-	var desc string
-	var seq string
 	var count int
 	for scanner.Scan() {
-		t := scanner.Text()
-		if c {
-			if strings.Contains(t, ">") {
-				count++
-				c = false
-				line := desc + "\n" + seq + "\n"
-				if _, err = f.WriteString(line); err != nil {
-					return
-				}
-				desc = ""
-				seq = ""
-				if count%limit == 0 {
-					f.Close()
-					part++
-					f, err = createPartFile(out, name, part)
-					if err != nil {
-						return
-					}
-					stats.Splits = append(stats.Splits, f.Name())
-				}
-			} else {
-				seq = seq + t
+		l := scanner.Bytes()
+
+		header := bytes.IndexByte(l, '>') == 0
+
+		if count != 0 && header {
+			if err = files.NewLine(); err != nil {
+				return
 			}
 		}
-		if strings.Contains(t, ">") {
-			desc = t
-			c = true
+
+		if header && count > 0 && count%limit == 0 {
+			if err = files.Cycle(); err != nil {
+				return
+			}
+			stats.Splits = append(stats.Splits, files.Name())
+		}
+
+		if err = files.Write(l); err != nil {
+			return
+		}
+
+		if header {
+			count++
+			if err = files.NewLine(); err != nil {
+				return
+			}
 		}
 	}
 	if err = scanner.Err(); err != nil {
+		return
+	}
+
+	if err = files.Close(); err != nil {
 		return
 	}
 
