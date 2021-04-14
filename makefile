@@ -1,5 +1,8 @@
 .PHONY: example
 
+test:
+	go run cmd/split.go -out=examples/generated/ -in=examples/gbpri20.seq
+
 example:
 	mkdir -p examples/generated
 	rm -rf examples/generated/*

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,9 +35,8 @@ func (s SplitStats) AsJSON() string {
 
 func parseTranslationLn(b []byte) ([]byte, bool) {
 	li := len(b) - 1
-	fmt.Println(string(b))
 	if b[li] == '"' {
-		return b[:li-1], true
+		return b[:li], true
 	}
 
 	return b, false
@@ -73,23 +71,17 @@ func SplitSequence(in, out string, limit int) (stats SplitStats, err error) {
 		l := scanner.Bytes()
 
 		if bytes.HasPrefix(l, []byte("LOCUS")) {
-			b := locus.Bytes()
 			locus = &genbank.Locus{}
 			continue
 		}
 
+		if bytes.HasPrefix(l, []byte("ACCESSION")) {
+			locus.Accession = string(l[12:])
+			continue
+		}
+
 		if bytes.HasPrefix(l, []byte("VERSION")) {
-			locus.Accession = l[12:]
-			continue
-		}
-
-		if bytes.HasPrefix(l, []byte("SOURCE")) {
-			locus.Source = l[12:]
-			continue
-		}
-
-		if bytes.HasPrefix(l, []byte("  ORGANISM")) {
-			locus.Organism = l[12:]
+			locus.Version = string(l[12:])
 			continue
 		}
 
@@ -102,38 +94,57 @@ func SplitSequence(in, out string, limit int) (stats SplitStats, err error) {
 		}
 		if s > 21 {
 
+			if bytes.HasPrefix(l[21:], []byte("/organism")) {
+				locus.Organism = string(l[32 : s-1])
+				continue
+			}
+
+			if bytes.HasPrefix(l[21:], []byte("/organelle")) {
+				locus.Organelle = string(l[33 : s-1])
+				continue
+			}
+
+			if bytes.HasPrefix(l[21:], []byte("/mol_type")) {
+				locus.MolType = string(l[32 : s-1])
+				continue
+			}
+
+			if bytes.HasPrefix(l[21:], []byte("/db_xref")) {
+				locus.DbXRef = string(l[31 : s-1])
+				continue
+			}
+
 			if bytes.HasPrefix(l[5:], []byte("CDS")) {
-				fmt.Printf("%+v\n", locus)
 				cds = locus.NewCds()
-				cds.Region = l[21:]
+				cds.Region = string(l[21:])
 				incds = true
 				continue
 			}
 
 			if incds && bytes.HasPrefix(l[21:], []byte("/gene=")) {
-				cds.Gene = l[28 : s-1]
+				cds.Gene = string(l[28 : s-1])
 				continue
 			}
 
 			if incds && bytes.HasPrefix(l[21:], []byte("/codon_start=")) {
-				cds.CodonStart = l[34:]
+				cds.CodonStart = string(l[34:])
 				continue
 			}
 
 			if incds && bytes.HasPrefix(l[21:], []byte("/product=")) {
-				cds.Product = l[31 : s-1]
+				cds.Product = string(l[31 : s-1])
 				continue
 			}
 
 			if incds && bytes.HasPrefix(l[21:], []byte("/protein_id=")) {
-				cds.ProteinId = l[34 : s-1]
+				cds.ProteinId = string(l[34 : s-1])
 				continue
 			}
 
 			if bytes.HasPrefix(l[21:], []byte("/translation=")) {
 				inseq = true
 				b, last := parseTranslationLn(l[35:])
-				cds.Translation = append(cds.Translation, b...)
+				cds.Translation += string(b)
 				if last {
 					inseq = false
 				}
@@ -141,9 +152,15 @@ func SplitSequence(in, out string, limit int) (stats SplitStats, err error) {
 
 			if inseq {
 				b, last := parseTranslationLn(l[21:])
-				cds.Translation = append(cds.Translation, b...)
+				cds.Translation += string(b)
 				if last {
 					inseq = false
+
+					b := locus.Bytes()
+					if err = files.Write(b); err != nil {
+						return
+					}
+
 				}
 			}
 		}

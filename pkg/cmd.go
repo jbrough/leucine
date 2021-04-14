@@ -16,7 +16,7 @@ func FastaPathsFromOpt(opt string) (fastas []string, err error) {
 		}
 
 		for _, f := range files {
-			if strings.HasSuffix(f.Name(), ".fa") || strings.HasSuffix(f.Name(), ".fasta") {
+			if strings.HasSuffix(f.Name(), ".seq") || strings.HasSuffix(f.Name(), ".fa") || strings.HasSuffix(f.Name(), ".fasta") {
 				fastas = append(fastas, filepath.Join(opt, f.Name()))
 			}
 		}

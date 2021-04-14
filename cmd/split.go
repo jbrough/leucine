@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -34,7 +35,14 @@ func main() {
 		wg.Add(1)
 		go func(path string, wg *sync.WaitGroup) {
 			defer wg.Done()
-			stats, err := leucine.SplitFasta(path, *out, int(*n))
+			var stats leucine.SplitStats
+			var err error
+			switch ft := filepath.Ext(path); ft {
+			case ".seq":
+				stats, err = leucine.SplitSequence(path, *out, int(*n))
+			case ".fasta", ".fa", ".faa":
+				stats, err = leucine.SplitFasta(path, *out, int(*n))
+			}
 			if err != nil {
 				panic(err)
 			}
