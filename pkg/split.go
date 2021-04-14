@@ -4,10 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jbrough/leucine/genbank"
 )
 
 type SplitInfo struct {
@@ -31,6 +34,133 @@ func (s SplitStats) AsJSON() string {
 	return string(j)
 }
 
+func parseTranslationLn(b []byte) ([]byte, bool) {
+	li := len(b) - 1
+	fmt.Println(string(b))
+	if b[li] == '"' {
+		return b[:li-1], true
+	}
+
+	return b, false
+}
+
+func SplitSequence(in, out string, limit int) (stats SplitStats, err error) {
+	ts := time.Now()
+
+	stats.Source = in
+	name := strings.TrimSuffix(filepath.Base(in), "")
+
+	file, err := os.Open(in)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	files, err := NewPartFiles(out, name)
+	if err != nil {
+		return
+	}
+
+	stats.Splits = append(stats.Splits, files.Name())
+
+	scanner := bufio.NewScanner(file)
+
+	locus := &genbank.Locus{}
+	var cds *genbank.Cds
+	var inseq bool
+	var incds bool
+	for scanner.Scan() {
+		l := scanner.Bytes()
+
+		if bytes.HasPrefix(l, []byte("LOCUS")) {
+			b := locus.Bytes()
+			locus = &genbank.Locus{}
+			continue
+		}
+
+		if bytes.HasPrefix(l, []byte("VERSION")) {
+			locus.Accession = l[12:]
+			continue
+		}
+
+		if bytes.HasPrefix(l, []byte("SOURCE")) {
+			locus.Source = l[12:]
+			continue
+		}
+
+		if bytes.HasPrefix(l, []byte("  ORGANISM")) {
+			locus.Organism = l[12:]
+			continue
+		}
+
+		s := len(l)
+
+		if incds && s > 5 {
+			if l[5] != ' ' {
+				incds = false
+			}
+		}
+		if s > 21 {
+
+			if bytes.HasPrefix(l[5:], []byte("CDS")) {
+				fmt.Printf("%+v\n", locus)
+				cds = locus.NewCds()
+				cds.Region = l[21:]
+				incds = true
+				continue
+			}
+
+			if incds && bytes.HasPrefix(l[21:], []byte("/gene=")) {
+				cds.Gene = l[28 : s-1]
+				continue
+			}
+
+			if incds && bytes.HasPrefix(l[21:], []byte("/codon_start=")) {
+				cds.CodonStart = l[34:]
+				continue
+			}
+
+			if incds && bytes.HasPrefix(l[21:], []byte("/product=")) {
+				cds.Product = l[31 : s-1]
+				continue
+			}
+
+			if incds && bytes.HasPrefix(l[21:], []byte("/protein_id=")) {
+				cds.ProteinId = l[34 : s-1]
+				continue
+			}
+
+			if bytes.HasPrefix(l[21:], []byte("/translation=")) {
+				inseq = true
+				b, last := parseTranslationLn(l[35:])
+				cds.Translation = append(cds.Translation, b...)
+				if last {
+					inseq = false
+				}
+			}
+
+			if inseq {
+				b, last := parseTranslationLn(l[21:])
+				cds.Translation = append(cds.Translation, b...)
+				if last {
+					inseq = false
+				}
+			}
+		}
+	}
+	if err = scanner.Err(); err != nil {
+		return
+	}
+
+	if err = files.Close(); err != nil {
+		return
+	}
+
+	es := time.Now().Sub(ts).Seconds()
+	stats.RuntimeSecs = es
+
+	return
+}
 func SplitFasta(in, out string, limit int) (stats SplitStats, err error) {
 	ts := time.Now()
 
