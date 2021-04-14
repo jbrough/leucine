@@ -21,29 +21,25 @@ type Locus struct {
 	cds       []Cds
 }
 
-func (l *Locus) Bytes() []byte {
-	var b []byte
-	for _, c := range l.cds {
-		lines := fmt.Sprintf(
-			">gb|%s|%s organisim=%q organelle=%q mol_type=%q xref=%q gene=%q cds=%q codon_start=%q version=%q dbsource=%q\n%s\n",
-			c.ProteinId,
-			c.Product,
-			l.Organism,
-			l.Organelle,
-			l.MolType,
-			l.DbXRef,
-			c.Gene,
-			c.Region,
-			c.CodonStart,
-			l.Version,
-			l.Accession,
-			c.Translation,
-		)
+func (l *Locus) CdsBytes() []byte {
+	c := l.Cds()
+	lines := fmt.Sprintf(
+		">gb|%s|%s organisim=%q organelle=%q mol_type=%q xref=%q gene=%q cds=%q codon_start=%q version=%q dbsource=%q\n%s\n",
+		c.ProteinId,
+		c.Product,
+		l.Organism,
+		l.Organelle,
+		l.MolType,
+		l.DbXRef,
+		c.Gene,
+		c.Region,
+		c.CodonStart,
+		l.Version,
+		l.Accession,
+		c.Translation,
+	)
 
-		b = append([]byte(lines))
-	}
-
-	return b
+	return []byte(lines)
 }
 
 func (l *Locus) NewCds() *Cds {

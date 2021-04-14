@@ -1,46 +1,14 @@
-package leucine
+package search
 
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"os"
 	"time"
 
+	"github.com/jbrough/leucine/metrics"
 	"github.com/twmb/murmur3"
 )
-
-type AlignInfo struct {
-	Query      string     `json:"query"`
-	Candidates string     `json:"candidates";`
-	Stats      AlignStats `json:"stats"`
-}
-
-type AlignStats struct {
-	SequencesSearched    int          `json:"sequeneces_searched"`
-	AlignmentsFound      int          `json:"alignments_found"`
-	AlignmentsTested     uint64       `json:"alignments_tested"`
-	AlignmentTestsPerSec uint64       `json:"alginment_tests_per_sec"`
-	RuntimeSecs          float64      `json:"runtime_secs"`
-	FastaFile            string       `json:"fasta_file,omitempty"`
-	Stats                []AlignStats `json:"stats,omitempty"`
-}
-
-func (s *AlignStats) Add(sa AlignStats) {
-	s.SequencesSearched += sa.SequencesSearched
-	s.AlignmentsFound += sa.AlignmentsFound
-	s.AlignmentsTested += sa.AlignmentsTested
-	s.AlignmentTestsPerSec += sa.AlignmentTestsPerSec
-	s.RuntimeSecs += sa.RuntimeSecs
-}
-
-func (s AlignStats) AsJSON() string {
-	j, err := json.Marshal(s)
-	if err != nil {
-		panic(err)
-	}
-	return string(j)
-}
 
 type Alignment struct {
 	QueryId     string        `json:"qid"`
@@ -149,7 +117,7 @@ func btoid(a []byte) []byte {
 	return a[4 : i+4]
 }
 
-func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats AlignStats, err error) {
+func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats metrics.AlignStats, err error) {
 	query_file, err := os.Open(query_path)
 	if err != nil {
 		return
@@ -159,7 +127,7 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 	query_table := make(map[uint64]map[uint64]int)
 	query_ids := make(map[uint64]string)
 	query_detail := make(map[uint64][2][]byte)
-	stats = AlignStats{}
+	stats = metrics.AlignStats{}
 
 	d := true
 	var id []byte

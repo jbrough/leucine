@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"sync"
 
-	leucine "github.com/jbrough/leucine/pkg"
+	"github.com/jbrough/leucine/io"
+	"github.com/jbrough/leucine/metrics"
+	"github.com/jbrough/leucine/search"
 )
 
 func main() {
@@ -21,11 +23,11 @@ func main() {
 	_ = out
 	flag.Parse()
 
-	outCh := make(chan leucine.Alignment)
+	outCh := make(chan search.Alignment)
 
-	info := leucine.AlignInfo{*query, *candidates, leucine.AlignStats{}}
+	info := metrics.AlignInfo{*query, *candidates, metrics.AlignStats{}}
 
-	paths, err := leucine.FastaPathsFromOpt(*candidates)
+	paths, err := io.PathsFromOpt(*candidates)
 	if err != nil {
 		panic(err)
 	}
@@ -48,7 +50,7 @@ func main() {
 		wg.Add(1)
 		go func(path string, wg *sync.WaitGroup) {
 			defer wg.Done()
-			stats, err := leucine.Align(*query, path, *n, outCh)
+			stats, err := search.Align(*query, path, *n, outCh)
 			if err != nil {
 				panic(err)
 			}
