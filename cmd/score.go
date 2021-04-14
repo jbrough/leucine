@@ -24,6 +24,8 @@ func main() {
 
 	flag.Parse()
 
+	upfilter := strings.ToUpper(*filter)
+
 	var test_filter bool
 	if *filter != "" {
 		test_filter = true
@@ -52,7 +54,7 @@ func main() {
 		}
 		if a.QueryId != "" {
 			if test_filter {
-				if !strings.Contains(a.Word, *filter) {
+				if !strings.Contains(a.Word, upfilter) {
 					continue
 				}
 			}

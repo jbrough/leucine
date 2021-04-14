@@ -7,7 +7,7 @@ import (
 )
 
 func FastaPathsFromOpt(opt string) (fastas []string, err error) {
-	if strings.HasSuffix(opt, ".fa") || strings.HasSuffix(opt, ".fasta") || strings.HasSuffix(opt, ".faa") {
+	if strings.HasSuffix(opt, ".seq") || strings.HasSuffix(opt, ".fa") || strings.HasSuffix(opt, ".fasta") || strings.HasSuffix(opt, ".faa") {
 		fastas = append(fastas, opt)
 	} else {
 		files, err := ioutil.ReadDir(opt)
@@ -16,7 +16,7 @@ func FastaPathsFromOpt(opt string) (fastas []string, err error) {
 		}
 
 		for _, f := range files {
-			if strings.HasSuffix(f.Name(), ".fa") || strings.HasSuffix(f.Name(), ".fasta") {
+			if strings.HasSuffix(f.Name(), ".seq") || strings.HasSuffix(f.Name(), ".fa") || strings.HasSuffix(f.Name(), ".fasta") {
 				fastas = append(fastas, filepath.Join(opt, f.Name()))
 			}
 		}
