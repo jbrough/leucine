@@ -20,13 +20,12 @@ About
 Leucine implements its own matching and scoring and is designed around streaming
 from flat file, and it does not need a database or require any pre-indexing.
 
-That said, it is _fast_.
-
-A common problem is:
-
+On a normal laptop you can expect to be able to run several million alignments a
+second - enough to compare all human proteins against a selection of other
+proteins (eg a smaller organism like a virus), in a few seconds.
+ 
 _Do any of the subsequences in any of the 30 proteins in an organism appear
 anywhere, at any position, in any human protein?_
-
 
 ```
 {
@@ -41,4 +40,9 @@ anywhere, at any position, in any human protein?_
 }
 ```
 
-Very much a WIP.
+
+TODO
+----
+
+Adding more tools that these rough results can be piped into - solvent
+accessible surface area is top of the list.
