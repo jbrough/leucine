@@ -11,20 +11,22 @@ import (
 	"sync"
 	"time"
 
-	leucine "github.com/jbrough/leucine/pkg"
+	"github.com/jbrough/leucine/fasta"
+	"github.com/jbrough/leucine/io"
+	"github.com/jbrough/leucine/metrics"
 )
 
 func main() {
 	n := flag.Float64("n", 1e7, "number of entries per fasta file eg 1e7")
-	in := flag.String("in", "", "fasta source file or directory")
+	in := flag.String("in", "", "source file or directory")
 	out := flag.String("out", "", "out folder")
 	flag.Parse()
 
 	ts := time.Now()
 
-	info := leucine.SplitInfo{*in, *out, []leucine.SplitStats{}, 0}
+	info := metrics.SplitInfo{*in, *out, []metrics.SplitStats{}, 0}
 
-	paths, err := leucine.FastaPathsFromOpt(*in)
+	paths, err := io.PathsFromOpt(*in)
 	if err != nil {
 		panic(err)
 	}
@@ -35,13 +37,13 @@ func main() {
 		wg.Add(1)
 		go func(path string, wg *sync.WaitGroup) {
 			defer wg.Done()
-			var stats leucine.SplitStats
+			var stats metrics.SplitStats
 			var err error
 			switch ft := filepath.Ext(path); ft {
 			case ".seq":
-				stats, err = leucine.SplitSequence(path, *out, int(*n))
+				stats, err = fasta.FromGenBankSeq(path, *out, int(*n))
 			case ".fasta", ".fa", ".faa":
-				stats, err = leucine.SplitFasta(path, *out, int(*n))
+				stats, err = fasta.FromFasta(path, *out, int(*n))
 			}
 			if err != nil {
 				panic(err)

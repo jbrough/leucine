@@ -1,37 +1,17 @@
-package leucine
+package fasta
 
 import (
 	"bufio"
 	"bytes"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/jbrough/leucine/genbank"
+	"github.com/jbrough/leucine/io"
+	"github.com/jbrough/leucine/metrics"
 )
-
-type SplitInfo struct {
-	Sources     string       `json:"source"`
-	Destination string       `json:"destination"`
-	Stats       []SplitStats `json:"stats"`
-	RuntimeSecs float64      `json:"runtime_secs"`
-}
-
-type SplitStats struct {
-	Source      string   `json:"source"`
-	Splits      []string `json:"splits"`
-	RuntimeSecs float64  `json:"runtime_secs"`
-}
-
-func (s SplitStats) AsJSON() string {
-	j, err := json.Marshal(s)
-	if err != nil {
-		panic(err)
-	}
-	return string(j)
-}
 
 func parseTranslationLn(b []byte) ([]byte, bool) {
 	li := len(b) - 1
@@ -42,7 +22,7 @@ func parseTranslationLn(b []byte) ([]byte, bool) {
 	return b, false
 }
 
-func SplitSequence(in, out string, limit int) (stats SplitStats, err error) {
+func FromGenBankSeq(in, out string, limit int) (stats metrics.SplitStats, err error) {
 	ts := time.Now()
 
 	stats.Source = in
@@ -54,7 +34,7 @@ func SplitSequence(in, out string, limit int) (stats SplitStats, err error) {
 	}
 	defer file.Close()
 
-	files, err := NewPartFiles(out, name)
+	files, err := io.NewPartFiles(out, name)
 	if err != nil {
 		return
 	}
@@ -67,6 +47,7 @@ func SplitSequence(in, out string, limit int) (stats SplitStats, err error) {
 	var cds *genbank.Cds
 	var inseq bool
 	var incds bool
+	var count int
 	for scanner.Scan() {
 		l := scanner.Bytes()
 
@@ -156,75 +137,19 @@ func SplitSequence(in, out string, limit int) (stats SplitStats, err error) {
 				if last {
 					inseq = false
 
-					b := locus.Bytes()
+					if count > 0 && count%limit == 0 {
+						if err = files.Cycle(); err != nil {
+							return
+						}
+						stats.Splits = append(stats.Splits, files.Name())
+					}
+
+					b := locus.CdsBytes()
 					if err = files.Write(b); err != nil {
 						return
 					}
-
+					count++
 				}
-			}
-		}
-	}
-	if err = scanner.Err(); err != nil {
-		return
-	}
-
-	if err = files.Close(); err != nil {
-		return
-	}
-
-	es := time.Now().Sub(ts).Seconds()
-	stats.RuntimeSecs = es
-
-	return
-}
-func SplitFasta(in, out string, limit int) (stats SplitStats, err error) {
-	ts := time.Now()
-
-	stats.Source = in
-	name := strings.TrimSuffix(filepath.Base(in), ".fasta")
-
-	file, err := os.Open(in)
-	if err != nil {
-		return
-	}
-	defer file.Close()
-
-	files, err := NewPartFiles(out, name)
-	if err != nil {
-		return
-	}
-
-	stats.Splits = append(stats.Splits, files.Name())
-
-	scanner := bufio.NewScanner(file)
-	var count int
-	for scanner.Scan() {
-		l := scanner.Bytes()
-
-		header := bytes.IndexByte(l, '>') == 0
-
-		if count != 0 && header {
-			if err = files.NewLine(); err != nil {
-				return
-			}
-		}
-
-		if header && count > 0 && count%limit == 0 {
-			if err = files.Cycle(); err != nil {
-				return
-			}
-			stats.Splits = append(stats.Splits, files.Name())
-		}
-
-		if err = files.Write(l); err != nil {
-			return
-		}
-
-		if header {
-			count++
-			if err = files.NewLine(); err != nil {
-				return
 			}
 		}
 	}

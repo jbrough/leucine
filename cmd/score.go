@@ -14,7 +14,7 @@ import (
 	"os"
 	"strings"
 
-	leucine "github.com/jbrough/leucine/pkg"
+	"github.com/jbrough/leucine/search"
 )
 
 func main() {
@@ -44,7 +44,7 @@ func main() {
 
 	dec := json.NewDecoder(os.Stdin)
 
-	var a leucine.Alignment
+	var a search.Alignment
 	for {
 		if err := dec.Decode(&a); err != nil {
 			if err == io.EOF {
@@ -58,7 +58,7 @@ func main() {
 					continue
 				}
 			}
-			score := leucine.BasicScore(&a)
+			score := search.BasicScore(&a)
 			j, err := json.Marshal(score)
 			if err != nil {
 				panic(err)

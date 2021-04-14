@@ -2,9 +2,9 @@
 // Pre-process interleaved files with "split" first, and optionally run split
 // on the output to split the selected file into smaller parts.
 
-// The search query can be a partial or exact match of any part of the fasta
+// The query query can be a partial or exact match of any part of the fasta
 // description. eg, to select by the UniProtKB entry name suffix:
-// -search="_HUMAN" or by the description, -search="Chimpanzee adenovirus Y25"
+// -query="_HUMAN" or by the description, -search="Chimpanzee adenovirus Y25"
 
 package main
 
@@ -17,20 +17,22 @@ import (
 	"sync"
 	"time"
 
-	leucine "github.com/jbrough/leucine/pkg"
+	"github.com/jbrough/leucine/fasta"
+	"github.com/jbrough/leucine/io"
+	"github.com/jbrough/leucine/metrics"
 )
 
 func main() {
-	search := flag.String("search", "", "search id, name or descriptive text")
+	query := flag.String("search", "", "search id, name or descriptive text")
 	in := flag.String("in", "", "candidate fasta file or directory")
 	out := flag.String("out", "", "fasta out file")
 	flag.Parse()
 
 	ts := time.Now()
 
-	info := leucine.SelectInfo{*in, *out, *search, []leucine.SelectStats{}, 0}
+	info := metrics.SelectInfo{*in, *out, *query, []metrics.SelectStats{}, 0}
 
-	paths, err := leucine.FastaPathsFromOpt(*in)
+	paths, err := io.PathsFromOpt(*in)
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +64,7 @@ func main() {
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
-			stats, err := leucine.Select(path, *search, outCh)
+			stats, err := fasta.Select(path, *query, outCh)
 			if err != nil {
 				panic(err)
 			}

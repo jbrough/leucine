@@ -1,4 +1,4 @@
-package leucine
+package search
 
 import (
 	"fmt"
