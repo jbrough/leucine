@@ -4,6 +4,19 @@ Leucine Search
 A text search engine based on fasta files for deterministic matching of whole
 sequence spaces.
 
+
+Quick Start
+------------
+
+Run `make example`
+
+This will reformat and search the UniProtKB fasta and GenBank Sequence files
+into sequential fasta files, select some query proteins, and run a search.
+
+
+About
+-----
+
 Leucine implements its own matching and scoring and is designed around streaming
 from flat file, and it does not need a database or require any pre-indexing.
 
