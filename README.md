@@ -46,3 +46,10 @@ TODO
 
 Adding more tools that these rough results can be piped into - solvent
 accessible surface area is top of the list.
+
+Another facet to the scoring would be to take into account Amino Acid 
+Exchangeability (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1449787/).
+
+Probabilistic subsitution matrices like Blossom would be unlikely to add any
+meaningfull information to these kinds of queries that compare small regions of
+sequences, but EX has potential.
