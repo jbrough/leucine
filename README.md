@@ -1,7 +1,7 @@
 Leucine Search
 ==============
 
-A text search engine based on fasta files for deterministic matching of whole
+A text search engine based on fasta files for deterministic searching of whole
 sequence spaces.
 
 
