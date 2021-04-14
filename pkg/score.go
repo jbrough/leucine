@@ -29,6 +29,7 @@ func BasicScore(a *Alignment) *Score {
 	matches := make(map[int]int)
 	var score int
 	var prevmatch bool
+	var boost int
 
 	for i, r := range la.A {
 		if la.A[i] != lb.A[i] {
@@ -43,9 +44,11 @@ func BasicScore(a *Alignment) *Score {
 			}
 
 			if prevmatch {
-				score += 5
+				boost += 1
+				score += boost
 			} else {
 				prevmatch = true
+				boost = 5
 			}
 			sm += string(r)
 		}
