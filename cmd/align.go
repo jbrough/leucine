@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/jbrough/leucine"
+	leucine "github.com/jbrough/leucine/pkg"
 )
 
 func main() {

@@ -14,7 +14,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jbrough/leucine"
+	leucine "github.com/jbrough/leucine/pkg"
 )
 
 func main() {
