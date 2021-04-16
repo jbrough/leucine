@@ -2,24 +2,20 @@ package search
 
 import (
 	"bufio"
-	"bytes"
 	"os"
 	"time"
 
 	"github.com/jbrough/leucine/metrics"
-	"github.com/twmb/murmur3"
 )
 
 type Alignment struct {
-	QueryId     string        `json:"qid"`
-	QueryIdx    int           `json:"qi"`
-	SubjectId   string        `json:"sid"`
-	SubjectIdx  int           `json:"si"`
-	Word        string        `json:"w"`
-	QuerySeq    LocalSequence `json:"qs,omitempty"`
-	SubjectSeq  LocalSequence `json:"ss,omitempty"`
-	QueryName   string        `json:"qn,omitempty"`
-	SubjectName string        `json:"sn,omitempty"`
+	QueryId    string        `json:"qid"`
+	QueryIdx   int           `json:"qi"`
+	SubjectId  string        `json:"sid"`
+	SubjectIdx int           `json:"si"`
+	Word       string        `json:"w"`
+	QuerySeq   LocalSequence `json:"qs,omitempty"`
+	SubjectSeq LocalSequence `json:"ss,omitempty"`
 }
 
 type LocalSequence struct {
@@ -90,14 +86,6 @@ func localSequences(qseq, sseq []byte, qidx, sidx, s int) (LocalSequence, LocalS
 		}
 }
 
-func hash(data []byte) uint64 {
-	hasher := murmur3.New128()
-	hasher.Write(data)
-	v1, v2 := hasher.Sum128()
-	_ = v2
-	return v1
-}
-
 func words(seq []byte, n int) (r [][]byte) {
 	s := len(seq)
 
@@ -112,60 +100,15 @@ func words(seq []byte, n int) (r [][]byte) {
 	return r
 }
 
-func btoid(a []byte) []byte {
-	i := bytes.IndexByte(a[4:], '|')
-	return a[4 : i+4]
-}
-
-func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats metrics.AlignStats, err error) {
+func Align(query_path, test_path string, ngram_n int, out chan<- Alignment) (stats metrics.AlignStats, err error) {
 	query_file, err := os.Open(query_path)
 	if err != nil {
 		return
 	}
 
-	query_test := make(map[uint64]bool)
-	query_table := make(map[uint64]map[uint64]int)
-	query_ids := make(map[uint64]string)
-	query_detail := make(map[uint64][2][]byte)
-	stats = metrics.AlignStats{}
-
-	d := true
-	var id []byte
-	var b []byte
-
 	scanner := bufio.NewScanner(query_file)
-	for scanner.Scan() {
-		l := scanner.Bytes()
-		if d {
-			if bytes.IndexByte(l, '>') == -1 {
-				panic("TODO: Interleaved fastas are not currently supported. Please pre-process with `split`")
-			}
-			d = !d
-			id = btoid(l)
-
-			tmp := make([]byte, len(l))
-			copy(tmp, l)
-			b = tmp
-
-		} else {
-			query_index := make(map[uint64]int)
-			for i, word := range words(l, ngram_n) {
-				h := hash(word)
-				query_test[h] = true
-				query_index[h] = i
-			}
-			query_table[hash(id)] = query_index
-			query_ids[hash(id)] = string(id)
-
-			tmp := make([]byte, len(l))
-			copy(tmp, l)
-
-			query_detail[hash(id)] = [2][]byte{b, tmp}
-
-			d = !d
-		}
-	}
-	if err = scanner.Err(); err != nil {
+	index, err := IndexStream(scanner, ngram_n)
+	if err != nil {
 		return
 	}
 
@@ -178,24 +121,29 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 	defer test_file.Close()
 
 	scanner = bufio.NewScanner(test_file)
+	return SearchStream(scanner, ngram_n, index, out)
+}
 
+func SearchStream(scanner *bufio.Scanner, ngram_n int, index *Index, out chan<- Alignment) (stats metrics.AlignStats, err error) {
 	ts := time.Now()
+
+	var tmp []byte
+	d := true
 
 	for scanner.Scan() {
 		l := scanner.Bytes()
 		var skip int
 		if d {
 			stats.SequencesSearched++
-			id = btoid(l)
 
-			tmp := make([]byte, len(l))
-			copy(tmp, l)
-			b = tmp
+			tmp = nil
+			tmp = make([]byte, len(l)-1) // remove leading '>'
+			copy(tmp, l[1:])
 
 			d = !d
 		} else {
 			// dont check self
-			if _, ok := query_table[hash(id)]; !ok {
+			if _, ok := index.Match[index.Hash(tmp)]; !ok {
 				for i, word := range words(l, ngram_n) {
 					if skip > 0 && i < skip {
 						continue
@@ -203,25 +151,28 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 						skip = 0
 					}
 					stats.AlignmentsTested++
-					if _, ok := query_test[hash(word)]; ok {
-						for qid, tbl := range query_table {
-							if idx, ok := tbl[hash(word)]; ok {
+					if _, ok := index.Test[index.Hash(word)]; ok {
+						for qid, tbl := range index.Match {
+							if idxs, ok := tbl[index.Hash(word)]; ok {
 								skip = i + ngram_n
 
+								id := string(tmp)
+								tmp = nil
 								tmp := make([]byte, len(l))
 								copy(tmp, l)
 
-								qseq, sseq := localSequences(query_detail[qid][1], tmp, idx, i, ngram_n)
+								// TODO: woops
+								idx := idxs[0]
+
+								qseq, sseq := localSequences(index.GetRef[qid][1], tmp, idx, i, ngram_n)
 								out <- Alignment{
-									QueryId:     query_ids[qid],
-									QueryIdx:    idx,
-									SubjectId:   string(id),
-									SubjectIdx:  i,
-									Word:        string(word),
-									QuerySeq:    qseq,
-									SubjectSeq:  sseq,
-									QueryName:   string(query_detail[qid][0][1:]),
-									SubjectName: string(b[1:]),
+									QueryId:    index.GetKey[qid],
+									QueryIdx:   idx,
+									SubjectId:  id,
+									SubjectIdx: i,
+									Word:       string(word),
+									QuerySeq:   qseq,
+									SubjectSeq: sseq,
 								}
 								stats.AlignmentsFound++
 							}

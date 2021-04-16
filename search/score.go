@@ -59,5 +59,5 @@ func BasicScore(a *Alignment) *Score {
 		fmt.Sprintf("Sbjct  %4d  %s  %4d", lb.X, lb.A, lb.Y),
 	}
 
-	return &Score{a.QueryName, a.SubjectName, strs, score}
+	return &Score{a.QueryId, a.SubjectId, strs, score}
 }
