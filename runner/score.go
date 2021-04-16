@@ -3,11 +3,10 @@
 // alignment, but it can be pretty-formatted in the console
 // by piping to `cmd/pretty.go` or `jq`.
 
-package main
+package runner
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -17,23 +16,17 @@ import (
 	"github.com/jbrough/leucine/search"
 )
 
-func main() {
-	min_score := flag.Int("min", 0, "min score")
-	max_score := flag.Int("max", 9999, "max score") // for debugging
-	filter := flag.String("filter", "", "filter by AA subsequence")
-
-	flag.Parse()
-
-	upfilter := strings.ToUpper(*filter)
+func Score(min_score, max_score int, filter string, jv bool) (err error) {
+	upfilter := strings.ToUpper(filter)
 
 	var test_filter bool
-	if *filter != "" {
+	if filter != "" {
 		test_filter = true
 	}
 
 	info, err := os.Stdin.Stat()
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
 	if info.Mode()&os.ModeCharDevice != 0 {
@@ -58,16 +51,34 @@ func main() {
 					continue
 				}
 			}
+
 			score := search.BasicScore(&a)
-			j, err := json.Marshal(score)
+
+			var j []byte
+			j, err = json.Marshal(score)
 			if err != nil {
-				panic(err)
+				return
 			}
 
-			if score.Score >= *min_score && score.Score <= *max_score {
-				fmt.Println(string(j))
+			if score.Score >= min_score && score.Score <= max_score {
+				if jv {
+					fmt.Println(string(j))
+				} else {
+					fmt.Printf(
+						"\n\nScore: %d\n\n\033[34m%s\n\033[0m%s\n%s\n%s\n%s\n\nQuery: %s\nSbjct: %s\n",
+						score.Score,
+						score.Alignment[0],
+						score.Alignment[1],
+						score.Alignment[2],
+						score.Alignment[3],
+						score.Alignment[4],
+						score.Query,
+						score.Subject,
+					)
+				}
 			}
 		}
-
 	}
+
+	return
 }

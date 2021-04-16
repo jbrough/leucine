@@ -1,7 +1,7 @@
 // Pretty print JSON output. The 'jq' package is also good for this.
 // code from https://stackoverflow.com/a/53124485
 
-package main
+package runner
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-func main() {
+func Pretty() (err error) {
 	info, err := os.Stdin.Stat()
 	if err != nil {
 		log.Fatal(err)
@@ -33,10 +33,12 @@ func main() {
 			if err == io.EOF {
 				break
 			}
-			log.Fatalf("decode error %v", err)
+			return err
 		}
 		if err := enc.Encode(data); err != nil {
-			log.Fatalf("encod error %v", err)
+			return err
 		}
 	}
+
+	return
 }

@@ -143,9 +143,6 @@ func Align(query_path, test_path string, ngram_n int, out chan Alignment) (stats
 			d = !d
 			id = btoid(l)
 
-			// TODO: go copies slices by value but the value is a reference to a
-			// backing array. There was a race here that meant b sometimes referenced
-			// the next line. This fixes it but I need to revist this implementation.
 			tmp := make([]byte, len(l))
 			copy(tmp, l)
 			b = tmp

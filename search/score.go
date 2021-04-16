@@ -7,11 +7,8 @@ import (
 type Score struct {
 	Query     string    `json:"query"`
 	Subject   string    `json:"sbjct"`
-	Alignment [3]string `json:"align"`
+	Alignment [5]string `json:"align"`
 	Score     int       `json:"score"`
-}
-
-type match struct {
 }
 
 func BasicScore(a *Alignment) *Score {
@@ -54,7 +51,9 @@ func BasicScore(a *Alignment) *Score {
 		}
 	}
 
-	strs := [3]string{
+	strs := [5]string{
+		fmt.Sprintf(" SASA        %s     ", ""),
+		fmt.Sprintf("             %s     ", ""),
 		fmt.Sprintf("Query  %4d  %s  %4d", la.X, la.A, la.Y),
 		fmt.Sprintf("             %s      ", sm),
 		fmt.Sprintf("Sbjct  %4d  %s  %4d", lb.X, lb.A, lb.Y),

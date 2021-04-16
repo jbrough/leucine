@@ -1,8 +1,7 @@
-package main
+package runner
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"sync"
 
@@ -11,34 +10,23 @@ import (
 	"github.com/jbrough/leucine/search"
 )
 
-func main() {
-	query := flag.String("query", "", "query fasta path")
-	candidates := flag.String("candidates", "", "candidate fasta path or directory path")
-	out := flag.String("out", "", "out file")
-	n := flag.Int("n", 6, "length of match")
-	jv := flag.Bool("j", false, "output CRLF-delimited JSON objects for streaming results")
-	v := flag.Bool("v", false, "enable JSON logging")
-
-	_ = v
-	_ = out
-	flag.Parse()
-
+func Search(query, candidates string, ngram_len int, jv bool) (err error) {
 	outCh := make(chan search.Alignment)
 
-	info := metrics.AlignInfo{*query, *candidates, metrics.AlignStats{}}
+	info := metrics.AlignInfo{query, candidates, metrics.AlignStats{}}
 
-	paths, err := io.PathsFromOpt(*candidates)
+	paths, err := io.PathsFromOpt(candidates)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	go func() {
 		for a := range outCh {
 			j, err := json.Marshal(a)
 			if err != nil {
-				panic(err)
+				return
 			}
-			if *jv {
+			if jv {
 				fmt.Println(string(j))
 			}
 		}
@@ -50,9 +38,9 @@ func main() {
 		wg.Add(1)
 		go func(path string, wg *sync.WaitGroup) {
 			defer wg.Done()
-			stats, err := search.Align(*query, path, *n, outCh)
+			stats, err := search.Align(query, path, ngram_len, outCh)
 			if err != nil {
-				panic(err)
+				return
 			}
 			stats.FastaFile = path
 			fmt.Println(stats.AsJSON())
@@ -66,8 +54,10 @@ func main() {
 
 	j, err := json.Marshal(&info)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	fmt.Println(string(j))
+
+	return
 }

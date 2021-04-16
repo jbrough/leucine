@@ -6,11 +6,10 @@
 // description. eg, to select by the UniProtKB entry name suffix:
 // -query="_HUMAN" or by the description, -search="Chimpanzee adenovirus Y25"
 
-package main
+package runner
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -22,28 +21,22 @@ import (
 	"github.com/jbrough/leucine/metrics"
 )
 
-func main() {
-	query := flag.String("search", "", "search id, name or descriptive text")
-	in := flag.String("in", "", "candidate fasta file or directory")
-	out := flag.String("out", "", "fasta out file")
-	flag.Parse()
-
+func Select(src, dst, query string) (err error) {
 	ts := time.Now()
 
-	info := metrics.SelectInfo{*in, *out, *query, []metrics.SelectStats{}, 0}
+	info := metrics.SelectInfo{src, dst, query, []metrics.SelectStats{}, 0}
 
-	paths, err := io.PathsFromOpt(*in)
+	paths, err := io.PathsFromOpt(src)
 	if err != nil {
 		panic(err)
 	}
 
 	outCh := make(chan [2]string)
 
-	file, err := os.Create(*out)
+	file, err := os.Create(dst)
 	if err != nil {
 		panic(err)
 	}
-
 	defer file.Close()
 
 	go func() {
@@ -58,13 +51,13 @@ func main() {
 	wg := sync.WaitGroup{}
 
 	for _, path := range paths {
-		if strings.Contains(path, *out) {
+		if strings.Contains(path, dst) {
 			continue
 		}
 		wg.Add(1)
 		go func(path string) {
 			defer wg.Done()
-			stats, err := fasta.Select(path, *query, outCh)
+			stats, err := fasta.Select(path, query, outCh)
 			if err != nil {
 				panic(err)
 			}
@@ -84,8 +77,9 @@ func main() {
 
 	j, err := json.Marshal(info)
 	if err != nil {
-		panic(err)
+		return
 	}
 	fmt.Println(string(j))
 
+	return
 }

@@ -49,7 +49,7 @@ func FromFasta(in, out string, limit int) (stats metrics.SplitStats, err error) 
 		}
 	}()
 
-	if err = ParseGenBankSeq(scanner, ch); err != nil {
+	if err = ParseFasta(scanner, ch); err != nil {
 		return
 	}
 
@@ -75,6 +75,7 @@ func ParseFasta(scanner *bufio.Scanner, entries chan<- []byte) (err error) {
 				entry = append(entry, '\n')
 				entries <- entry
 				entry = nil
+
 				entry = append(entry, l...)
 				entry = append(entry, '\n')
 			}

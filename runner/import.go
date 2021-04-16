@@ -1,11 +1,7 @@
-// Convert an interleaved fasta file into sequential format and optionally split into
-// part files containing a max number of entries each.
-
-package main
+package runner
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"path/filepath"
 	"sync"
@@ -16,17 +12,11 @@ import (
 	"github.com/jbrough/leucine/metrics"
 )
 
-func main() {
-	n := flag.Float64("n", 1e7, "number of entries per fasta file eg 1e7")
-	in := flag.String("in", "", "source file or directory")
-	out := flag.String("out", "", "out folder")
-	flag.Parse()
-
+func Import(src, dst string, split_after int) (err error) {
 	ts := time.Now()
+	info := metrics.SplitInfo{src, dst, []metrics.SplitStats{}, 0}
 
-	info := metrics.SplitInfo{*in, *out, []metrics.SplitStats{}, 0}
-
-	paths, err := io.PathsFromOpt(*in)
+	paths, err := io.PathsFromOpt(src)
 	if err != nil {
 		panic(err)
 	}
@@ -41,12 +31,12 @@ func main() {
 			var err error
 			switch ft := filepath.Ext(path); ft {
 			case ".seq":
-				stats, err = fasta.FromGenBankSeq(path, *out, int(*n))
+				stats, err = fasta.FromGenBankSeq(path, dst, int(split_after))
 			case ".fasta", ".fa", ".faa":
-				stats, err = fasta.FromFasta(path, *out, int(*n))
+				stats, err = fasta.FromFasta(path, dst, int(split_after))
 			}
 			if err != nil {
-				panic(err)
+				return
 			}
 			fmt.Println(stats.AsJSON())
 
@@ -63,4 +53,6 @@ func main() {
 	}
 
 	fmt.Println(string(j))
+
+	return
 }
