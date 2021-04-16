@@ -1,0 +1,214 @@
+//
+LOCUS       CR407567               90590 bp    DNA     linear   PRI 13-JAN-2009
+DEFINITION  Human DNA sequence from clone RP11-312O7 on chromosome 1 Contains
+            the FAM72A gene for family with sequence similarity 72, member A, a
+            novel gene (MGC57827) and a CpG island, complete sequence.
+ACCESSION   CR407567
+VERSION     CR407567.2
+KEYWORDS    HTG; MGC57827.
+SOURCE      Homo sapiens (human)
+  ORGANISM  Homo sapiens
+            Eukaryota; Metazoa; Chordata; Craniata; Vertebrata; Euteleostomi;
+            Mammalia; Eutheria; Euarchontoglires; Primates; Haplorrhini;
+            Catarrhini; Hominidae; Homo.
+REFERENCE   1  (bases 1 to 90590)
+  AUTHORS   McLaren,K.
+  TITLE     Direct Submission
+  JOURNAL   Submitted (09-JAN-2009) Wellcome Trust Sanger Institute, Hinxton,
+            Cambridgeshire, CB10 1SA, UK. E-mail enquiries: vega@sanger.ac.uk
+            Clone requests: Geneservice (http://www.geneservice.co.uk/) and
+            BACPAC Resources (http://bacpac.chori.org/)
+COMMENT     On May 11, 2004 this sequence version replaced CR407567.1.
+            -------------- Genome Center
+            Center: Wellcome Trust Sanger Institute
+            Center code: SC
+            Web site: http://www.sanger.ac.uk
+            Contact: vega@sanger.ac.uk
+            --------------
+            
+            This sequence was finished as follows unless otherwise noted: all
+            regions were either double-stranded or sequenced with an alternate
+            chemistry or covered by high quality data (i.e., phred quality >=
+            30); an attempt was made to resolve all sequencing problems, such
+            as compressions and repeats; all regions were covered by at least
+            one subclone; and the assembly was confirmed by restriction digest,
+            except on the rare occasion of the clone being a YAC.
+            
+            The following abbreviations are used to associate primary accession
+            numbers given in the feature table with their source databases:
+            Em:, EMBL; Sw:, SWISSPROT; Tr:, TREMBL; Wp:, WORMPEP; Information
+            on the WORMPEP database can be found at
+            http://www.sanger.ac.uk/Projects/C_elegans/wormpep
+            
+            This sequence was generated from part of bacterial clone contigs of
+            human chromosome 1, constructed by the Sanger Centre Chromosome 1
+            Mapping Group.  Further information can be found at
+            http://www.sanger.ac.uk/HGP/Chr1
+            
+            IMPORTANT: This sequence is not the entire insert of clone
+            RP11-312O7. It may be shorter because we sequence overlapping
+            sections only once, except for a short overlap.
+            
+            During sequence assembly data is compared from overlapping clones.
+            Where differences are found these are annotated as variations
+            together with a note of the overlapping clone name. Note that the
+            variation annotation may not be found in the sequence submission
+            corresponding to the overlapping clone, as we submit sequences with
+            only a small overlap.
+            
+            The true left end of clone RP11-312O7 is at 1 in this sequence. The
+            true left end of clone RP11-38J22 is at 88591 in this sequence.
+            
+            RP11-312O7 is from the library RPCI-11.2 constructed by the group
+            of Pieter de Jong. For further details see
+            http://bacpac.chori.org/
+            VECTOR: pBACe3.6.
+FEATURES             Location/Qualifiers
+     source          1..90590
+                     /organism="Homo sapiens"
+                     /mol_type="genomic DNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="1"
+                     /clone="RP11-312O7"
+                     /clone_lib="RPCI-11.2"
+     misc_feature    1..88590
+                     /note="annotated region of clone"
+     misc_feature    1
+                     /note="Clone_left_end: RP11-312O7"
+     gene            complement(order(62586..63194,64973..65121))
+                     /locus_tag="RP11-312O7.2-001"
+     mRNA            complement(join(62586..63194,64973..65121))
+                     /locus_tag="RP11-312O7.2-001"
+                     /product="novel transcript"
+                     /note="match: ESTs: Em:BM832644.1 Em:BU596517.1
+                     Em:CB988067.1 Em:CN418487.1 Em:CN418489.1"
+     gene            order(64209..64371,68739..68816,72747..72871,81250..81457)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-005"
+     mRNA            join(64209..64371,68739..68816,72747..72871,81250..81457)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-005"
+                     /product="family with sequence similarity 72, member A"
+                     /note="match: ESTs: Em:BM926368.1"
+     gene            order(64530..64779,65065..65443)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-007"
+     mRNA            join(64530..64779,65065..65443)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-007"
+                     /product="family with sequence similarity 72, member A"
+                     /note="match: ESTs: Em:BX093292.1"
+     gene            order(64558..64779,68739..68816,72747..72871,81250..81500)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-006"
+     mRNA            join(64558..64779,68739..68816,72747..72871,81250..81500)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-006"
+                     /product="family with sequence similarity 72, member A"
+                     /note="match: ESTs: Em:BI916384.1"
+     CDS             join(64628..64779,68739..68816,72747..72871,81250..81344)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-006"
+                     /standard_name="OTTHUMP00000039537"
+                     /codon_start=1
+                     /product="family with sequence similarity 72, member A"
+                     /protein_id="CAH72364.1"
+                     /db_xref="HGNC:HGNC:24044"
+                     /db_xref="UniProtKB/TrEMBL:Q5TYM6"
+                     /translation="MPTTTALRWTAAARVRRKGRGGWVPAALRSVSQDGVPGCTVMGG
+                     ETRSPENAVDFTGRCYFTKICKCKLKDIACLKCGNIVGYHVIVPCSSCLLSCNNGHFW
+                     MFHSQAVYDINRLDSTGVNVLLWGNLPEIEESTDEDVLNISAEECIR"
+     gene            order(65750..66749,68739..68816,72747..72871,81250..82444)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-001"
+     mRNA            join(65750..66749,68739..68816,72747..72871,81250..82444)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-001"
+                     /product="family with sequence similarity 72, member A"
+                     /note="match: cDNAs: Em:AB096683.1 Em:BC035696.1;
+                     match: ESTs: Em:AI004681.1 Em:BG179154.1 Em:BG614549.1
+                     Em:CN390965.1"
+     gene            order(65772..66013,66734..66749,68739..68816,72747..72783)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-004"
+     mRNA            join(65772..66013,66734..66749,68739..68816,72747..72783)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-004"
+                     /product="family with sequence similarity 72, member A"
+                     /note="match: ESTs: Em:AW403341.1"
+     gene            order(65796..66107,66618..66749,68739..68816,72747..72871,
+                     81250..81342)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-003"
+     mRNA            join(65796..66107,66618..66749,68739..68816,72747..72871,
+                     81250..81342)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-003"
+                     /product="family with sequence similarity 72, member A"
+                     /note="match: ESTs: Em:BF982501.1"
+     gene            order(66177..66629,68739..68816,72747..72871,81250..82367)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-002"
+     mRNA            join(66177..66629,68739..68816,72747..72871,81250..82367)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-002"
+                     /product="family with sequence similarity 72, member A"
+                     /note="match: cDNAs: Em:BC046199.1"
+     CDS             join(66598..66749,68739..68816,72747..72871,81250..81344)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-001"
+                     /standard_name="OTTHUMP00000039535"
+                     /codon_start=1
+                     /product="family with sequence similarity 72, member A"
+                     /protein_id="CAH72365.1"
+                     /db_xref="HGNC:HGNC:24044"
+                     /db_xref="UniProtKB/Swiss-Prot:Q5TYM5"
+                     /translation="MSTNICSFKDRCVSILCCKFCKQVLSSRGMKAVLLADTEIDLFS
+                     TDIPPTNAVDFTGRCYFTKICKCKLKDIACLKCGNIVGYHVIVPCSSCLLSCNNGHFW
+                     MFHSQAVYDINRLDSTGVNVLLWGNLPEIEESTDEDVLNISAEECIR"
+     CDS             join(66598..66629,68739..68816,72747..72871,81250..81344)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-002"
+                     /standard_name="OTTHUMP00000039536"
+                     /codon_start=1
+                     /product="family with sequence similarity 72, member A"
+                     /protein_id="CAH72366.1"
+                     /db_xref="HGNC:HGNC:24044"
+                     /db_xref="UniProtKB/Swiss-Prot:Q5TYM5"
+                     /translation="MSTNICSFKDSAVDFTGRCYFTKICKCKLKDIACLKCGNIVGYH
+                     VIVPCSSCLLSCNNGHFWMFHSQAVYDINRLDSTGVNVLLWGNLPEIEESTDEDVLNI
+                     SAEECIR"
+     regulatory      82420..82425
+                     /regulatory_class="polyA_signal_sequence"
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-001"
+     polyA_site      82441
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-001"
+     polyA_site      82444
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-001"
+ORIGIN      
+        1 gaattctttg actcccaatt atttattaac tttgtgacag tctgattcta ttctcccctt
+       61 tttatctgcc ttcctccatt atgctcccat ttttattggc tttatttcta tttttcagaa
+//
+LOCUS       TEST               90590 bp    DNA     linear   PRI 13-JAN-2009
+FEATURES             Location/Qualifiers
+     source          1..90590
+                     /organism="Homo sapiens"
+                     /mol_type="genomic DNA"
+                     /db_xref="taxon:9606"
+                     /chromosome="1"
+                     /clone="RP11-312O7"
+                     /clone_lib="RPCI-11.2"
+     CDS             join(64628..64779,68739..68816,72747..72871,81250..81344)
+                     /gene="FAM72A"
+                     /locus_tag="RP11-312O7.1-006"
+                     /standard_name="OTTHUMP00000039537"
+                     /codon_start=1
+                     /product="family with sequence similarity 72, member A"
+                     /protein_id="CAH72364.1"
+                     /db_xref="HGNC:HGNC:24044"
+                     /db_xref="UniProtKB/TrEMBL:Q5TYM6"
+                     /translation="NEXTLOCUS"
+// 

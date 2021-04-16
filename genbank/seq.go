@@ -24,7 +24,7 @@ type Locus struct {
 func (l *Locus) CdsBytes() []byte {
 	c := l.Cds()
 	lines := fmt.Sprintf(
-		">gb|%s|%s organisim=%q organelle=%q mol_type=%q xref=%q gene=%q cds=%q codon_start=%q version=%q dbsource=%q\n%s\n",
+		">gb|%s|%s organisim=%q organelle=%q mol_type=%q db_xref=%q gene=%q cds=%q codon_start=%q version=%q dbsource=%q\n%s\n",
 		c.ProteinId,
 		c.Product,
 		l.Organism,

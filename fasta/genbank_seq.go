@@ -13,15 +13,6 @@ import (
 	"github.com/jbrough/leucine/metrics"
 )
 
-func parseTranslationLn(b []byte) ([]byte, bool) {
-	li := len(b) - 1
-	if b[li] == '"' {
-		return b[:li], true
-	}
-
-	return b, false
-}
-
 func FromGenBankSeq(in, out string, limit int) (stats metrics.SplitStats, err error) {
 	ts := time.Now()
 
@@ -42,17 +33,52 @@ func FromGenBankSeq(in, out string, limit int) (stats metrics.SplitStats, err er
 	stats.Splits = append(stats.Splits, files.Name())
 
 	scanner := bufio.NewScanner(file)
+	ch := make(chan []byte)
 
-	locus := &genbank.Locus{}
+	go func() {
+		defer close(ch)
+		for entry := range ch {
+			_ = entry
+		}
+	}()
+
+	if err = ParseGenBankSeq(scanner, ch); err != nil {
+		return
+	}
+
+	if err = files.Close(); err != nil {
+		return
+	}
+
+	es := time.Now().Sub(ts).Seconds()
+	stats.RuntimeSecs = es
+
+	return
+}
+
+func ParseGenBankSeq(scanner *bufio.Scanner, entries chan<- []byte) (err error) {
+
+	parseTranslationLn := func(b []byte) ([]byte, bool) {
+		li := len(b) - 1
+		if b[li] == '"' {
+			return b[:li], true
+		}
+
+		return b, false
+	}
+
+	locus := genbank.Locus{}
 	var cds *genbank.Cds
+
 	var inseq bool
 	var incds bool
-	var count int
+	var seq string
+
 	for scanner.Scan() {
 		l := scanner.Bytes()
 
 		if bytes.HasPrefix(l, []byte("LOCUS")) {
-			locus = &genbank.Locus{}
+			locus = genbank.Locus{}
 			continue
 		}
 
@@ -122,47 +148,31 @@ func FromGenBankSeq(in, out string, limit int) (stats metrics.SplitStats, err er
 				continue
 			}
 
-			if bytes.HasPrefix(l[21:], []byte("/translation=")) {
-				inseq = true
-				b, last := parseTranslationLn(l[35:])
-				cds.Translation += string(b)
-				if last {
-					inseq = false
-				}
-			}
-
 			if inseq {
 				b, last := parseTranslationLn(l[21:])
-				cds.Translation += string(b)
+				seq += string(b)
 				if last {
+					cds.Translation = seq
 					inseq = false
+					seq = ""
 
-					if count > 0 && count%limit == 0 {
-						if err = files.Cycle(); err != nil {
-							return
-						}
-						stats.Splits = append(stats.Splits, files.Name())
-					}
+					entries <- locus.CdsBytes()
+				}
+			} else if bytes.HasPrefix(l[21:], []byte("/translation=")) {
+				inseq = true
+				b, last := parseTranslationLn(l[35:])
+				seq += string(b)
+				if last {
+					cds.Translation = seq
+					inseq = false
+					seq = ""
 
-					b := locus.CdsBytes()
-					if err = files.Write(b); err != nil {
-						return
-					}
-					count++
+					entries <- locus.CdsBytes()
 				}
 			}
 		}
-	}
-	if err = scanner.Err(); err != nil {
-		return
+
 	}
 
-	if err = files.Close(); err != nil {
-		return
-	}
-
-	es := time.Now().Sub(ts).Seconds()
-	stats.RuntimeSecs = es
-
-	return
+	return scanner.Err()
 }
