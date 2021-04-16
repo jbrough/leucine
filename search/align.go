@@ -127,7 +127,7 @@ func Align(query_path, test_path string, ngram_n int, out chan<- Alignment) (sta
 func SearchStream(scanner *bufio.Scanner, ngram_n int, index *Index, out chan<- Alignment) (stats metrics.AlignStats, err error) {
 	ts := time.Now()
 
-	var tmp []byte
+	var def []byte
 	d := true
 
 	for scanner.Scan() {
@@ -136,14 +136,14 @@ func SearchStream(scanner *bufio.Scanner, ngram_n int, index *Index, out chan<- 
 		if d {
 			stats.SequencesSearched++
 
-			tmp = nil
-			tmp = make([]byte, len(l)-1) // remove leading '>'
-			copy(tmp, l[1:])
+			def = nil
+			def = make([]byte, len(l)-1) // remove leading '>'
+			copy(def, l[1:])
 
 			d = !d
 		} else {
 			// dont check self
-			if _, ok := index.Match[index.Hash(tmp)]; !ok {
+			if _, ok := index.Match[index.Hash(def)]; !ok {
 				for i, word := range words(l, ngram_n) {
 					if skip > 0 && i < skip {
 						continue
@@ -156,8 +156,7 @@ func SearchStream(scanner *bufio.Scanner, ngram_n int, index *Index, out chan<- 
 							if idxs, ok := tbl[index.Hash(word)]; ok {
 								skip = i + ngram_n
 
-								id := string(tmp)
-								tmp = nil
+								id := string(def)
 								tmp := make([]byte, len(l))
 								copy(tmp, l)
 
@@ -165,6 +164,7 @@ func SearchStream(scanner *bufio.Scanner, ngram_n int, index *Index, out chan<- 
 								idx := idxs[0]
 
 								qseq, sseq := localSequences(index.GetRef[qid][1], tmp, idx, i, ngram_n)
+
 								out <- Alignment{
 									QueryId:    index.GetKey[qid],
 									QueryIdx:   idx,
@@ -174,6 +174,7 @@ func SearchStream(scanner *bufio.Scanner, ngram_n int, index *Index, out chan<- 
 									QuerySeq:   qseq,
 									SubjectSeq: sseq,
 								}
+
 								stats.AlignmentsFound++
 							}
 						}
