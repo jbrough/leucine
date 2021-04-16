@@ -25,12 +25,11 @@ func FromGenBankSeq(in, out string, limit int) (stats metrics.SplitStats, err er
 	}
 	defer file.Close()
 
-	files, err := io.NewPartFiles(out, name)
+	files, err := io.NewPartFiles(out, name, limit)
 	if err != nil {
 		return
 	}
-
-	stats.Splits = append(stats.Splits, files.Name())
+	defer files.Close()
 
 	scanner := bufio.NewScanner(file)
 	ch := make(chan []byte)
@@ -38,15 +37,18 @@ func FromGenBankSeq(in, out string, limit int) (stats metrics.SplitStats, err er
 	go func() {
 		defer close(ch)
 		for entry := range ch {
-			_ = entry
+			part, newpart, err := files.Write(entry)
+			if err != nil {
+				return
+			}
+
+			if newpart {
+				stats.Splits = append(stats.Splits, part)
+			}
 		}
 	}()
 
 	if err = ParseGenBankSeq(scanner, ch); err != nil {
-		return
-	}
-
-	if err = files.Close(); err != nil {
 		return
 	}
 
@@ -67,7 +69,7 @@ func ParseGenBankSeq(scanner *bufio.Scanner, entries chan<- []byte) (err error) 
 		return b, false
 	}
 
-	locus := genbank.Locus{}
+	var locus genbank.Locus
 	var cds *genbank.Cds
 
 	var inseq bool

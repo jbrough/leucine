@@ -24,49 +24,32 @@ func FromFasta(in, out string, limit int) (stats metrics.SplitStats, err error) 
 	}
 	defer file.Close()
 
-	files, err := io.NewPartFiles(out, name)
+	files, err := io.NewPartFiles(out, name, limit)
 	if err != nil {
 		return
 	}
+	defer files.Close()
 
 	stats.Splits = append(stats.Splits, files.Name())
 
 	scanner := bufio.NewScanner(file)
-	var count int
-	for scanner.Scan() {
-		l := scanner.Bytes()
+	ch := make(chan []byte)
 
-		header := bytes.IndexByte(l, '>') == 0
-
-		if count != 0 && header {
-			if err = files.NewLine(); err != nil {
+	go func() {
+		defer close(ch)
+		for entry := range ch {
+			part, newpart, err := files.Write(entry)
+			if err != nil {
 				return
 			}
-		}
 
-		if header && count > 0 && count%limit == 0 {
-			if err = files.Cycle(); err != nil {
-				return
-			}
-			stats.Splits = append(stats.Splits, files.Name())
-		}
-
-		if err = files.Write(l); err != nil {
-			return
-		}
-
-		if header {
-			count++
-			if err = files.NewLine(); err != nil {
-				return
+			if newpart {
+				stats.Splits = append(stats.Splits, part)
 			}
 		}
-	}
-	if err = scanner.Err(); err != nil {
-		return
-	}
+	}()
 
-	if err = files.Close(); err != nil {
+	if err = ParseGenBankSeq(scanner, ch); err != nil {
 		return
 	}
 
@@ -74,4 +57,31 @@ func FromFasta(in, out string, limit int) (stats metrics.SplitStats, err error) 
 	stats.RuntimeSecs = es
 
 	return
+}
+
+func ParseFasta(scanner *bufio.Scanner, entries chan<- []byte) (err error) {
+	var entry []byte
+
+	for scanner.Scan() {
+		l := scanner.Bytes()
+
+		def := bytes.IndexByte(l, '>') == 0
+
+		if def {
+			if entry == nil { // first line of file
+				entry = append(entry, l...)
+				entry = append(entry, '\n')
+			} else { // back on a definition line with a def and seq in the tmp var
+				entry = append(entry, '\n')
+				entries <- entry
+				entry = nil
+				entry = append(entry, l...)
+				entry = append(entry, '\n')
+			}
+		} else {
+			entry = append(entry, l...)
+		}
+	}
+
+	return scanner.Err()
 }

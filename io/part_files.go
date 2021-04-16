@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 )
 
-func NewPartFiles(folder, name string) (pf *PartFiles, err error) {
+func NewPartFiles(folder, name string, limit int) (pf *PartFiles, err error) {
 	pf = &PartFiles{
-		Folder: folder, BaseName: name}
+		Folder: folder, BaseName: name, Limit: limit}
 	err = pf.Cycle()
 	return
 }
@@ -17,6 +17,8 @@ type PartFiles struct {
 	files    []*os.File
 	Folder   string
 	BaseName string
+	Limit    int
+	entries  int
 	part     int
 }
 
@@ -30,8 +32,22 @@ func (pf *PartFiles) NewLine() (err error) {
 	return
 }
 
-func (pf *PartFiles) Write(b []byte) (err error) {
+func (pf *PartFiles) Write(b []byte) (part string, newpart bool, err error) {
 	_, err = pf.files[len(pf.files)-1].Write(b)
+	if err != nil {
+		return
+	}
+
+	pf.entries++
+	if pf.entries%pf.Limit == 0 {
+		if err = pf.Cycle(); err != nil {
+			return
+		}
+
+		newpart = true
+	}
+
+	part = pf.Name()
 	return
 }
 
