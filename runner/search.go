@@ -1,8 +1,10 @@
 package runner
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 	"time"
 
@@ -11,16 +13,29 @@ import (
 	"github.com/jbrough/leucine/search"
 )
 
-func Search(query, candidates string, ngram_len int, jv bool) (err error) {
+func Search(query_src, candidates_src string, ngram_len int, jv bool) (err error) {
 	ts := time.Now()
 	outCh := make(chan search.Alignment)
 
-	info := metrics.AlignInfo{query, candidates, metrics.AlignStats{}}
+	info := metrics.AlignInfo{query_src, candidates_src, metrics.AlignStats{}}
 
-	paths, err := io.PathsFromOpt(candidates)
+	paths, err := io.PathsFromOpt(candidates_src)
 	if err != nil {
 		return
 	}
+
+	query_file, err := os.Open(query_src)
+	if err != nil {
+		return
+	}
+
+	scanner := bufio.NewScanner(query_file)
+	index, err := search.IndexStream(scanner, ngram_len)
+	if err != nil {
+		return
+	}
+
+	query_file.Close()
 
 	go func() {
 		for a := range outCh {
@@ -40,7 +55,7 @@ func Search(query, candidates string, ngram_len int, jv bool) (err error) {
 		wg.Add(1)
 		go func(path string, wg *sync.WaitGroup) {
 			defer wg.Done()
-			stats, err := search.Align(query, path, ngram_len, outCh)
+			stats, err := search.Align(index, path, ngram_len, outCh)
 			if err != nil {
 				return
 			}

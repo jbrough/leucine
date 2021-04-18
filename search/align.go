@@ -2,6 +2,7 @@ package search
 
 import (
 	"bufio"
+	"bytes"
 	"os"
 	"time"
 
@@ -100,19 +101,7 @@ func Words(seq []byte, n int) (r [][]byte) {
 	return r
 }
 
-func Align(query_path, test_path string, ngram_n int, out chan<- Alignment) (stats metrics.AlignStats, err error) {
-	query_file, err := os.Open(query_path)
-	if err != nil {
-		return
-	}
-
-	scanner := bufio.NewScanner(query_file)
-	index, err := IndexStream(scanner, ngram_n)
-	if err != nil {
-		return
-	}
-
-	query_file.Close()
+func Align(index *Index, test_path string, ngram_n int, out chan<- Alignment) (stats metrics.AlignStats, err error) {
 
 	test_file, err := os.Open(test_path)
 	if err != nil {
@@ -120,72 +109,81 @@ func Align(query_path, test_path string, ngram_n int, out chan<- Alignment) (sta
 	}
 	defer test_file.Close()
 
-	scanner = bufio.NewScanner(test_file)
+	scanner := bufio.NewScanner(test_file)
+	scanner.Split(ScanFastas)
 	return SearchStream(scanner, ngram_n, index, out)
+}
+
+func ScanFastas(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
+	}
+	if i := bytes.IndexByte(data, '>'); i >= 0 {
+		return i + 1, data[0:i], nil
+	}
+	// If we're at EOF, we have a final, non-terminated line. Return it.
+	if atEOF {
+		return len(data), data, nil
+	}
+	// Request more data.
+	return 0, nil, nil
 }
 
 func SearchStream(scanner *bufio.Scanner, ngram_n int, index *Index, out chan<- Alignment) (stats metrics.AlignStats, err error) {
 	ts := time.Now()
 
-	var def []byte
-	d := true
-
 	for scanner.Scan() {
 		l := scanner.Bytes()
-		var skip int
-		if d {
-			stats.SequencesSearched++
 
-			def = nil
-			def = make([]byte, len(l)-1) // remove leading '>'
-			copy(def, l[1:])
+		i := bytes.IndexByte(l, '\n')
+		if i == -1 {
+			continue
+		}
 
-			d = !d
-		} else {
-			// dont check self
-			if _, ok := index.Match[index.Hash(def)]; !ok {
-				for i, word := range Words(l, ngram_n) {
-					if skip > 0 && i < skip {
-						continue
-					} else {
-						skip = 0
-					}
-					stats.AlignmentsTested++
-					if _, ok := index.Test(word); ok {
-						for qid, tbl := range index.Match {
-							if idxs, ok := tbl[index.Hash(word)]; ok {
-								skip = i + ngram_n
+		def := l[0:i]
+		seq := l[i:]
 
-								id := string(def)
-								tmp := make([]byte, len(l))
-								copy(tmp, l)
+		// dont check self
+		if _, ok := index.Match[index.Hash(def)]; !ok {
+			var skip int
+			for i, word := range Words(seq, ngram_n) {
+				if skip > 0 && i < skip {
+					continue
+				} else {
+					skip = 0
+				}
+				stats.AlignmentsTested++
+				if ok := index.Test(word); ok {
+					for qid, tbl := range index.Match {
+						if idxs, ok := tbl[index.Hash(word)]; ok {
+							skip = i + ngram_n
 
-								// TODO: woops
-								idx := idxs[0]
+							id := string(def)
+							s := string(seq)
+							idx := idxs[0]
 
-								qseq, sseq := localSequences(index.GetRef[qid][1], tmp, idx, i, ngram_n)
+							qseq, sseq := localSequences(index.GetRef[qid][1], []byte(s), idx, i, ngram_n)
 
-								out <- Alignment{
-									QueryId:    index.GetKey[qid],
-									QueryIdx:   idx,
-									SubjectId:  id,
-									SubjectIdx: i,
-									Word:       string(word),
-									QuerySeq:   qseq,
-									SubjectSeq: sseq,
-								}
-
-								stats.AlignmentsFound++
+							out <- Alignment{
+								QueryId:    index.GetKey[qid],
+								QueryIdx:   idx,
+								SubjectId:  id,
+								SubjectIdx: i,
+								Word:       string(word),
+								QuerySeq:   qseq,
+								SubjectSeq: sseq,
 							}
+
+							stats.AlignmentsFound++
 						}
 					}
 				}
-				d = !d
 			}
 		}
 		if err = scanner.Err(); err != nil {
 			return
 		}
+		stats.SequencesSearched++
 	}
 
 	es := time.Now().Sub(ts).Seconds()
