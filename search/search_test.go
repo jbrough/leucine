@@ -1,16 +1,26 @@
-package search
+package search_test
 
 import (
+	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/jbrough/leucine/io"
 	"github.com/jbrough/leucine/metrics"
+	"github.com/jbrough/leucine/search"
 )
 
 type testTbl struct {
 	in   int
 	want int
+}
+
+func TestWords(t *testing.T) {
+	test := []byte("MSLSVEFNKQQVRPRSEI")
+	got := search.Words(test, 6)
+	for _, word := range got {
+		fmt.Println(string(word))
+	}
 }
 
 func BenchmarkSearch(t *testing.B) {
@@ -44,7 +54,7 @@ func TestSearch(t *testing.T) {
 }
 
 func searchTest(in int) int {
-	outCh := make(chan Alignment)
+	outCh := make(chan search.Alignment)
 
 	query := "../data/sars2.fa"
 	candidates := "../examples/generated/"
@@ -68,7 +78,7 @@ func searchTest(in int) int {
 		wg.Add(1)
 		go func(path string, wg *sync.WaitGroup) {
 			defer wg.Done()
-			stats, err := Align(query, path, in, outCh)
+			stats, err := search.Align(query, path, in, outCh)
 			if err != nil {
 				panic(err)
 			}

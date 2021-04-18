@@ -37,6 +37,11 @@ func Score(min_score, max_score int, filter string, jv bool) (err error) {
 
 	dec := json.NewDecoder(os.Stdin)
 
+	sidx, err := search.LoadSasas("./sasa/")
+	if err != nil {
+		return err
+	}
+
 	var a search.Alignment
 	for {
 		if err := dec.Decode(&a); err != nil {
@@ -52,7 +57,7 @@ func Score(min_score, max_score int, filter string, jv bool) (err error) {
 				}
 			}
 
-			score := search.BasicScore(&a)
+			score := search.BasicScore(&a, sidx)
 
 			var j []byte
 			j, err = json.Marshal(score)
@@ -65,10 +70,10 @@ func Score(min_score, max_score int, filter string, jv bool) (err error) {
 					fmt.Println(string(j))
 				} else {
 					fmt.Printf(
-						"\n\nScore: %d\n\n\033[34m%s\n\033[0m%s\n%s\n%s\n%s\n\nQuery: %s\nSbjct: %s\n",
+						"\n\nScore: %d\n\n\033[34m%s\n\033[37m%s\n%s\n%s\n\nQuery: %s\nSbjct: %s\n",
 						score.Score,
 						score.Alignment[0],
-						score.Alignment[1],
+						//score.Alignment[1],
 						score.Alignment[2],
 						score.Alignment[3],
 						score.Alignment[4],

@@ -11,7 +11,7 @@ type Score struct {
 	Score     int       `json:"score"`
 }
 
-func BasicScore(a *Alignment) *Score {
+func BasicScore(a *Alignment, sidx *SasaSeqIndex) *Score {
 	la := a.QuerySeq
 	lb := a.SubjectSeq
 	var sm string
@@ -50,10 +50,11 @@ func BasicScore(a *Alignment) *Score {
 			sm += string(r)
 		}
 	}
-
+	sa := sidx.Get()
+	xa, xb := sa.Region(la.X, la.Y)
 	strs := [5]string{
-		fmt.Sprintf(" SASA        %s     ", ""),
-		fmt.Sprintf("             %s     ", ""),
+		fmt.Sprintf(" SASA        %s     ", xa),
+		fmt.Sprintf("             %s     ", xb),
 		fmt.Sprintf("Query  %4d  %s  %4d", la.X, la.A, la.Y),
 		fmt.Sprintf("             %s      ", sm),
 		fmt.Sprintf("Sbjct  %4d  %s  %4d", lb.X, lb.A, lb.Y),

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/jbrough/leucine/io"
 	"github.com/jbrough/leucine/metrics"
@@ -11,6 +12,7 @@ import (
 )
 
 func Search(query, candidates string, ngram_len int, jv bool) (err error) {
+	ts := time.Now()
 	outCh := make(chan search.Alignment)
 
 	info := metrics.AlignInfo{query, candidates, metrics.AlignStats{}}
@@ -51,6 +53,9 @@ func Search(query, candidates string, ngram_len int, jv bool) (err error) {
 	}
 
 	wg.Wait()
+
+	es := time.Now().Sub(ts).Seconds()
+	info.Stats.RuntimeSecs = es
 
 	j, err := json.Marshal(&info)
 	if err != nil {

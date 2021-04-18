@@ -86,7 +86,7 @@ func localSequences(qseq, sseq []byte, qidx, sidx, s int) (LocalSequence, LocalS
 		}
 }
 
-func words(seq []byte, n int) (r [][]byte) {
+func Words(seq []byte, n int) (r [][]byte) {
 	s := len(seq)
 
 	for i, _ := range seq {
@@ -144,14 +144,14 @@ func SearchStream(scanner *bufio.Scanner, ngram_n int, index *Index, out chan<- 
 		} else {
 			// dont check self
 			if _, ok := index.Match[index.Hash(def)]; !ok {
-				for i, word := range words(l, ngram_n) {
+				for i, word := range Words(l, ngram_n) {
 					if skip > 0 && i < skip {
 						continue
 					} else {
 						skip = 0
 					}
 					stats.AlignmentsTested++
-					if _, ok := index.Test[index.Hash(word)]; ok {
+					if _, ok := index.Test(word); ok {
 						for qid, tbl := range index.Match {
 							if idxs, ok := tbl[index.Hash(word)]; ok {
 								skip = i + ngram_n

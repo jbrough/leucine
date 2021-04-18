@@ -1,5 +1,9 @@
 .PHONY: example
 
+t:
+	go test ./... -v
+
+
 test:
 	go test ./... -bench=. -v
 

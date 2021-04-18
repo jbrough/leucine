@@ -4,6 +4,7 @@ import (
 	"flag"
 
 	"github.com/jbrough/leucine/runner"
+	"github.com/jbrough/leucine/search"
 )
 
 // TODO refactor with a cli lib
@@ -50,6 +51,9 @@ func main() {
 
 	case "pretty":
 		err = runner.Pretty()
+
+	case "sasa":
+		err = search.ProcessPdb(*src, *dst)
 	}
 
 	if err != nil {

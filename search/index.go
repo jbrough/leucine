@@ -4,23 +4,34 @@ import (
 	"bufio"
 	"errors"
 
+	cuckoo "github.com/seiflotfy/cuckoofilter"
 	"github.com/twmb/murmur3"
 )
 
 func NewIndex() *Index {
 	return &Index{
-		Test:   make(map[uint64]bool),
+		test:   make(map[uint64]bool),
 		Match:  make(map[uint64]map[uint64][]int),
 		GetKey: make(map[uint64]string),
 		GetRef: make(map[uint64][2][]byte),
+		filter: cuckoo.NewFilter(1000),
 	}
 }
 
 type Index struct {
-	Test   map[uint64]bool
+	test   map[uint64]bool
 	Match  map[uint64]map[uint64][]int
 	GetKey map[uint64]string
 	GetRef map[uint64][2][]byte
+	filter *cuckoo.Filter
+}
+
+func (i *Index) Test(b []byte) bool {
+	return i.test[i.Hash(b)]
+}
+
+func (i *Index) TestCuckoo(b []byte) bool {
+	return i.filter.Lookup(b)
 }
 
 func (i *Index) Hash(data []byte) uint64 {
@@ -54,11 +65,12 @@ func (i *Index) AddVal(key, val []byte, idx int) bool {
 	}
 
 	// return false if collision
-	if _, ok := i.Test[vh]; ok {
+	if _, ok := i.test[vh]; ok {
+
 		return false
 	}
 
-	i.Test[vh] = true
+	i.test[vh] = true
 	idxs := i.Match[kh][vh]
 	i.Match[kh][vh] = append(idxs, idx)
 
@@ -92,7 +104,7 @@ func IndexStream(scanner *bufio.Scanner, ngram_n int) (index *Index, err error) 
 				return
 			}
 
-			for i, word := range words(l, ngram_n) {
+			for i, word := range Words(l, ngram_n) {
 				index.AddVal(def, word, i)
 
 				seq = nil

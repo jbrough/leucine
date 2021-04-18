@@ -6,19 +6,31 @@ import (
 	"strings"
 )
 
-// TODO: refactor, one of those methods you split off too soon and then special case
-func PathsFromOpt(opt string) (fastas []string, err error) {
-	if strings.HasSuffix(opt, ".seq") || strings.HasSuffix(opt, ".fa") || strings.HasSuffix(opt, ".fasta") || strings.HasSuffix(opt, ".faa") {
-		fastas = append(fastas, opt)
+func PathsFromOpt(opt string) (paths []string, err error) {
+	allowed_exts := []string{
+		".seq", ".fa", ".fasta", ".faa", ".ent", ".sasa",
+	}
+
+	hasSuffix := func(s string) bool {
+		for _, ext := range allowed_exts {
+			if strings.HasSuffix(s, ext) {
+				return true
+			}
+		}
+		return false
+	}
+
+	if hasSuffix(opt) {
+		paths = append(paths, opt)
 	} else {
 		files, err := ioutil.ReadDir(opt)
 		if err != nil {
-			return fastas, err
+			return paths, err
 		}
 
 		for _, f := range files {
-			if strings.HasSuffix(f.Name(), ".seq") || strings.HasSuffix(f.Name(), ".fa") || strings.HasSuffix(f.Name(), ".fasta") {
-				fastas = append(fastas, filepath.Join(opt, f.Name()))
+			if hasSuffix(f.Name()) {
+				paths = append(paths, filepath.Join(opt, f.Name()))
 			}
 		}
 	}

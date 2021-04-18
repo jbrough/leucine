@@ -3,27 +3,108 @@ package search
 import (
 	"bufio"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/jbrough/leucine/io"
 	"github.com/jbrough/leucine/lib"
+	"github.com/rs/zerolog/log"
 )
 
 // Parse FreeSASA residue results
 
-func NewSasaSeqs() *SasaSeqs {
-	return &SasaSeqs{
-		make(map[int]*Residue),
-		"",
+func ProcessPdb(src, dst string) (err error) {
+	paths, err := io.PathsFromOpt(src)
+	if err != nil {
+		return err
+	}
+
+	for _, path := range paths {
+		dst_path := filepath.Join(dst, filepath.Base(path)+".sasa")
+		if err = FreeSasa(path, dst_path); err != nil {
+			return
+		}
+
+		log.Info().Msg("freesasa processed " + path)
+	}
+
+	return
+}
+
+func FreeSasa(src, dst string) (err error) {
+	cmd := exec.Command(
+		"freesasa", "--depth=residue", "--format=seq", "--output="+dst, src)
+
+	if err = cmd.Run(); err != nil {
+		return
+	}
+
+	return
+}
+
+func NewSasaSeqIndex() *SasaSeqIndex {
+	return &SasaSeqIndex{
+		seqs:   make(map[string]*SasaSeq),
+		scores: make(map[string]int),
+		Index:  NewIndex(),
 	}
 }
 
-type SasaSeqs struct {
-	seq map[int]*Residue
-	aa  string
+type SasaSeqIndex struct {
+	seqs   map[string]*SasaSeq
+	scores map[string]int
+	Index  *Index
 }
 
-func (s *SasaSeqs) Region(a, b int) (string, string) {
+func (si *SasaSeqIndex) Get() (s *SasaSeq) {
+	for _, s := range si.seqs {
+		return s
+	}
+	return
+}
+func (si *SasaSeqIndex) Add(sa *SasaSeq) {
+	si.seqs[sa.PdbId] = sa
+
+	var seq string
+	var score []int
+	var lp int
+
+	for i := 1; i < len(sa.seq); i++ {
+		pos := sa.order[i]
+		r := sa.seq[pos]
+		if lp == 0 || pos-1 == lp {
+			seq += r.AA.A
+			score = append(score, int(r.Score))
+		} else {
+			seq += " "
+			score = append(score, 0)
+		}
+		lp = pos
+	}
+
+	for i, word := range Words([]byte(seq), 20) {
+		si.Index.AddVal([]byte(sa.PdbId), []byte(word), i)
+	}
+}
+
+func NewSasaSeq(id string) *SasaSeq {
+	return &SasaSeq{
+		PdbId: id,
+		seq:   make(map[int]*Residue),
+		order: make(map[int]int),
+	}
+}
+
+type SasaSeq struct {
+	PdbId string
+	seq   map[int]*Residue
+	order map[int]int
+	aa    string
+}
+
+func (s *SasaSeq) Region(a, b int) (string, string) {
 	w := ""
 	u := ""
 	for i := a; i < b; i++ {
@@ -53,8 +134,9 @@ func (s *SasaSeqs) Region(a, b int) (string, string) {
 	return w, u
 }
 
-func (se *SasaSeqs) Add(r *Residue) {
+func (se *SasaSeq) Add(r *Residue, i int) {
 	se.seq[r.Pos-1] = r
+	se.order[i] = r.Pos - 1
 	se.aa += r.AA.A
 }
 
@@ -83,7 +165,27 @@ func parseResidue(b []byte, aa *lib.AminoAcids) (r *Residue, err error) {
 	return
 }
 
-func LoadSasa(path string) (sa *SasaSeqs, err error) {
+func LoadSasas(src string) (set *SasaSeqIndex, err error) {
+	paths, err := io.PathsFromOpt(src)
+	if err != nil {
+		return
+	}
+
+	set = NewSasaSeqIndex()
+
+	for _, path := range paths {
+		sa, err := LoadSasa(path)
+		if err != nil {
+			return set, err
+		}
+
+		set.Add(sa)
+	}
+
+	return
+}
+
+func LoadSasa(path string) (sa *SasaSeq, err error) {
 	aa := lib.AA()
 
 	f, err := os.Open(path)
@@ -91,7 +193,9 @@ func LoadSasa(path string) (sa *SasaSeqs, err error) {
 		return
 	}
 
-	sa = NewSasaSeqs()
+	id := strings.TrimSuffix(filepath.Base(path), ".ent.sasa")
+
+	sa = NewSasaSeq(id)
 
 	scanner := bufio.NewScanner(f)
 	var i int
@@ -112,7 +216,7 @@ func LoadSasa(path string) (sa *SasaSeqs, err error) {
 			return
 		}
 		if r.Seq == "A" {
-			sa.Add(r)
+			sa.Add(r, i-1)
 		}
 	}
 	if err = scanner.Err(); err != nil {
