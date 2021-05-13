@@ -8,7 +8,7 @@ import (
 
 func PathsFromOpt(opt string) (paths []string, err error) {
 	allowed_exts := []string{
-		".seq", ".fa", ".fasta", ".faa", ".ent", ".sasa",
+		".seq", ".fa", ".fasta", ".faa", ".ent", ".sasa", ".gz",
 	}
 
 	hasSuffix := func(s string) bool {

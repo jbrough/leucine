@@ -2,7 +2,6 @@ package fasta
 
 import (
 	"bufio"
-	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -59,8 +58,7 @@ func FromGenBankSeq(in, out string, limit int) (stats metrics.SplitStats, err er
 }
 
 func ParseGenBankSeq(scanner *bufio.Scanner, entries chan<- []byte) (err error) {
-
-	parseTranslationLn := func(b []byte) ([]byte, bool) {
+	parseTranslationLn := func(b string) (string, bool) {
 		li := len(b) - 1
 		if b[li] == '"' {
 			return b[:li], true
@@ -77,20 +75,20 @@ func ParseGenBankSeq(scanner *bufio.Scanner, entries chan<- []byte) (err error) 
 	var seq string
 
 	for scanner.Scan() {
-		l := scanner.Bytes()
+		l := scanner.Text()
 
-		if bytes.HasPrefix(l, []byte("LOCUS")) {
+		if strings.HasPrefix(l, "LOCUS") {
 			locus = genbank.Locus{}
 			continue
 		}
 
-		if bytes.HasPrefix(l, []byte("ACCESSION")) {
-			locus.Accession = string(l[12:])
+		if strings.HasPrefix(l, "ACCESSION") {
+			locus.Accession = l[12:]
 			continue
 		}
 
-		if bytes.HasPrefix(l, []byte("VERSION")) {
-			locus.Version = string(l[12:])
+		if strings.HasPrefix(l, "VERSION") {
+			locus.Version = l[12:]
 			continue
 		}
 
@@ -103,73 +101,73 @@ func ParseGenBankSeq(scanner *bufio.Scanner, entries chan<- []byte) (err error) 
 		}
 		if s > 21 {
 
-			if bytes.HasPrefix(l[21:], []byte("/organism")) {
-				locus.Organism = string(l[32 : s-1])
+			if strings.HasPrefix(l[21:], "/organism") {
+				locus.Organism = l[32 : s-1]
 				continue
 			}
 
-			if bytes.HasPrefix(l[21:], []byte("/organelle")) {
-				locus.Organelle = string(l[33 : s-1])
+			if strings.HasPrefix(l[21:], "/organelle") {
+				locus.Organelle = l[33 : s-1]
 				continue
 			}
 
-			if bytes.HasPrefix(l[21:], []byte("/mol_type")) {
-				locus.MolType = string(l[32 : s-1])
+			if strings.HasPrefix(l[21:], "/mol_type") {
+				locus.MolType = l[32 : s-1]
 				continue
 			}
 
-			if bytes.HasPrefix(l[21:], []byte("/db_xref")) {
-				locus.DbXRef = string(l[31 : s-1])
+			if strings.HasPrefix(l[21:], "/db_xref") {
+				locus.DbXRef = l[31 : s-1]
 				continue
 			}
 
-			if bytes.HasPrefix(l[5:], []byte("CDS")) {
+			if strings.HasPrefix(l[5:], "CDS") {
 				cds = locus.NewCds()
-				cds.Region = string(l[21:])
+				cds.Region = l[21:]
 				incds = true
 				continue
 			}
 
-			if incds && bytes.HasPrefix(l[21:], []byte("/gene=")) {
-				cds.Gene = string(l[28 : s-1])
+			if incds && strings.HasPrefix(l[21:], "/gene=") {
+				cds.Gene = l[28 : s-1]
 				continue
 			}
 
-			if incds && bytes.HasPrefix(l[21:], []byte("/codon_start=")) {
-				cds.CodonStart = string(l[34:])
+			if incds && strings.HasPrefix(l[21:], "/codon_start=") {
+				cds.CodonStart = l[34:]
 				continue
 			}
 
-			if incds && bytes.HasPrefix(l[21:], []byte("/product=")) {
-				cds.Product = string(l[31 : s-1])
+			if incds && strings.HasPrefix(l[21:], "/product=") {
+				cds.Product = l[31 : s-1]
 				continue
 			}
 
-			if incds && bytes.HasPrefix(l[21:], []byte("/protein_id=")) {
-				cds.ProteinId = string(l[34 : s-1])
+			if incds && strings.HasPrefix(l[21:], "/protein_id=") {
+				cds.ProteinId = l[34 : s-1]
 				continue
 			}
 
 			if inseq {
 				b, last := parseTranslationLn(l[21:])
-				seq += string(b)
+				seq += b
 				if last {
 					cds.Translation = seq
 					inseq = false
 					seq = ""
 
-					entries <- locus.CdsBytes()
+					entries <- locus.Fasta()
 				}
-			} else if bytes.HasPrefix(l[21:], []byte("/translation=")) {
+			} else if strings.HasPrefix(l[21:], "/translation=") {
 				inseq = true
 				b, last := parseTranslationLn(l[35:])
-				seq += string(b)
+				seq += b
 				if last {
 					cds.Translation = seq
 					inseq = false
 					seq = ""
 
-					entries <- locus.CdsBytes()
+					entries <- locus.Fasta()
 				}
 			}
 		}

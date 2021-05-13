@@ -36,7 +36,7 @@ func TestFromGenBankSeq(t *testing.T) {
 	go func() {
 		defer close(ch)
 		if err := fasta.ParseGenBankSeq(scanner, ch); err != nil {
-			t.Fatal(err)
+			panic(err)
 		}
 	}()
 
@@ -65,5 +65,4 @@ func TestFromGenBankSeq(t *testing.T) {
 	if tests != 8 {
 		t.Errorf("Expected 4 results, got %d", tests)
 	}
-
 }

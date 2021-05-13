@@ -1,6 +1,9 @@
 package genbank
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Cds struct {
 	CodonStart  string
@@ -21,10 +24,10 @@ type Locus struct {
 	cds       []Cds
 }
 
-func (l *Locus) CdsBytes() []byte {
+func (l *Locus) Fasta() []byte {
 	c := l.Cds()
-	lines := fmt.Sprintf(
-		">gb|%s|%s organisim=%q organelle=%q mol_type=%q db_xref=%q gene=%q cds=%q codon_start=%q version=%q dbsource=%q\n%s\n",
+	def := fmt.Sprintf(
+		"gb|%s|%s organisim=%q organelle=%q mol_type=%q db_xref=%q gene=%q cds=%q codon_start=%q version=%q dbsource=%q\n",
 		c.ProteinId,
 		c.Product,
 		l.Organism,
@@ -36,9 +39,9 @@ func (l *Locus) CdsBytes() []byte {
 		c.CodonStart,
 		l.Version,
 		l.Accession,
-		c.Translation,
 	)
 
+	lines := ">" + strings.Replace(def, ">", "gt", -1) + c.Translation + "\n"
 	return []byte(lines)
 }
 

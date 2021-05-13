@@ -1,0 +1,58 @@
+package fasta_test
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/jbrough/leucine/fasta"
+	"github.com/jbrough/leucine/pdb"
+)
+
+var def = `>pdb|2HM3|2HM3_1|NEMATOCYST OUTER WALL ANTIGEN, CYSTEINE RICH DOMAIN NW1 mol="NEMATOCYST OUTER WALL ANTIGEN" frag="FIRST CYSTEINE RICH DOMAIN" org="HYDRA VULGARIS" taxid=6087 dbref=Q8IT70:8IT70_HYDAT chain=A start=7 end=31`
+
+var pdbDefResults = ""
+
+func TestFromPdbEnt(t *testing.T) {
+	f, err := os.Open("testdata/pdb_complex.ent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	f2, err := os.Open("testdata/2hgw.freesasa.out")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scanner1 := bufio.NewScanner(f)
+	scanner2 := bufio.NewScanner(f2)
+	ch := make(chan *pdb.Ent)
+
+	go func() {
+		defer close(ch)
+		if err := fasta.ParsePdbEnt(scanner1, scanner2, ch); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	var tests int
+	var i int
+	for ent := range ch {
+		got := strings.Split(ent.Fastas(), "\n")
+		want := ""
+		for _, a := range got {
+			fmt.Println(a)
+		}
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("def mismatch on def %d (-want +got):\n%s", i, diff)
+		}
+		tests++
+	}
+
+	if tests != 8 {
+		t.Errorf("Expected 4 results, got %d", tests)
+	}
+
+}

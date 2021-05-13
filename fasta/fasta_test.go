@@ -2,11 +2,10 @@ package fasta
 
 import (
 	"bufio"
+	"fmt"
+	"io"
 	"os"
-	"strings"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 var faDefResults = [2]string{
@@ -25,40 +24,38 @@ func TestFromFasta(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	defer f.Close()
+
+	fi, err := os.Open("testdata/interleaved.fa")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fi.Close()
+
 	scanner := bufio.NewScanner(f)
-	ch := make(chan []byte)
+	ch := make(chan Entry)
 
 	go func() {
 		defer close(ch)
-		if err := ParseFasta(scanner, ch); err != nil {
-			t.Fatal(err)
+		if err := Parse(scanner, ch); err != nil {
+			panic(err)
 		}
 	}()
 
-	var tests int
-	var i int
-	for entry := range ch {
-		s := string(entry)
-		l := strings.Split(s, "\n")
-
-		got := l[0]
-		want := faDefResults[i]
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("def mismatch on seq %d (-want +got):\n%s", i, diff)
+	for e := range ch {
+		fmt.Println(e)
+		if _, err = fi.Seek(e.Src.ByteOffset, 0); err != nil {
+			panic(err)
 		}
-		tests++
-
-		got = l[1]
-		want = faSeqResults[i]
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("/translation mismatch on seq %d (-want +got):\n%s", i, diff)
+		b := make([]byte, e.Src.Bytes)
+		if _, err = io.ReadAtLeast(fi, b, int(e.Src.Bytes)); err != nil {
+			panic(err)
 		}
-		tests++
-		i++
+
+		fmt.Println(string(b))
+		fmt.Println("----")
+
 	}
 
-	if tests != 2 {
-		t.Errorf("Expected 4 results, got %d", tests)
-	}
-
+	t.Fail()
 }
